@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinkedIn Formatter - Format Your Posts Like a Pro</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 448 512'%3E%3Cpath fill='%230a66c2' d='M100.28 448H7.4V148.9h92.88zM53.79 108.1C24.09 108.1 0 83.5 0 53.8a53.79 53.79 0 0 1 107.58 0c0 29.7-24.1 54.3-53.79 54.3zM447.9 448h-92.68V302.4c0-34.7-.7-79.2-48.29-79.2-48.29 0-55.69 37.7-55.69 76.7V448h-92.78V148.9h89.08v40.8h1.3c12.4-23.5 42.69-48.3 87.88-48.3 94 0 111.28 61.9 111.28 142.3V448z'/%3E%3C/svg%3E">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <i class="fab fa-linkedin"></i>
+                <h1>LinkedIn Formatter</h1>
+            </div>
+            <p class="subtitle">Transform your LinkedIn posts with professional formatting</p>
+        </header>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Toolbar -->
+            <div class="toolbar">
+                <div class="toolbar-section">
+                    <h3><i class="fas fa-undo"></i> Actions</h3>
+                    <div class="button-group">
+                        <button class="tool-btn" onclick="undo()" title="Undo (Ctrl+Z)">
+                            <i class="fas fa-undo"></i>
+                        </button>
+                        <button class="tool-btn" onclick="redo()" title="Redo (Ctrl+Shift+Z)">
+                            <i class="fas fa-redo"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="toolbar-section">
+                    <h3><i class="fas fa-font"></i> Text Styles</h3>
+                    <div class="button-group">
+                        <button class="tool-btn" onclick="formatText('bold')" title="Bold">
+                            <i class="fas fa-bold"></i>
+                        </button>
+                        <button class="tool-btn" onclick="formatText('italic')" title="Italic">
+                            <i class="fas fa-italic"></i>
+                        </button>
+                        <button class="tool-btn" onclick="formatText('underline')" title="Underline">
+                            <i class="fas fa-underline"></i>
+                        </button>
+                        <button class="tool-btn" onclick="formatText('strikethrough')" title="Strikethrough">
+                            <i class="fas fa-strikethrough"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="toolbar-section">
+                    <h3><i class="fas fa-list"></i> Lists</h3>
+                    <div class="button-group">
+                        <button class="tool-btn" onclick="addList('bullet')" title="Bullet List">
+                            <i class="fas fa-list-ul"></i>
+                        </button>
+                        <button class="tool-btn" onclick="addList('number')" title="Numbered List">
+                            <i class="fas fa-list-ol"></i>
+                        </button>
+                        <button class="tool-btn" onclick="addList('check')" title="Checklist">
+                            <i class="fas fa-check-square"></i>
+                        </button>
+                        <button class="tool-btn" onclick="addList('arrow')" title="Arrow List">
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="toolbar-section">
+                    <h3><i class="fas fa-heading"></i> Headers</h3>
+                    <div class="button-group">
+                        <button class="tool-btn" onclick="addHeader('h1')" title="Large Header">H1</button>
+                        <button class="tool-btn" onclick="addHeader('h2')" title="Medium Header">H2</button>
+                        <button class="tool-btn" onclick="addHeader('h3')" title="Small Header">H3</button>
+                    </div>
+                </div>
+
+                <div class="toolbar-section">
+                    <h3><i class="fas fa-icons"></i> Special</h3>
+                    <div class="button-group">
+                        <button class="tool-btn" onclick="addDivider()" title="Add Divider">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                        <button class="tool-btn" onclick="addQuote()" title="Add Quote">
+                            <i class="fas fa-quote-left"></i>
+                        </button>
+                        <button class="tool-btn" onclick="addEmoji()" title="Add Emoji">
+                            <i class="fas fa-smile"></i>
+                        </button>
+                        <button class="tool-btn" onclick="addSpacing()" title="Add Line Spacing">
+                            <i class="fas fa-arrows-alt-v"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Editor Section -->
+            <div class="editor-section">
+                <div class="editor-panel">
+                    <div class="panel-header">
+                        <h3><i class="fas fa-edit"></i> Editor</h3>
+                        <button class="clear-btn" onclick="clearEditor()">
+                            <i class="fas fa-trash"></i> Clear
+                        </button>
+                    </div>
+                    <textarea 
+                        id="editor" 
+                        placeholder="Start typing your LinkedIn post here...&#10;&#10;Use the toolbar above to format your text, or type directly.&#10;&#10;Try it out! 👋"
+                        spellcheck="true"
+                        autocomplete="off"
+                        autocorrect="off"
+                        autocapitalize="off"
+                    ></textarea>
+                    <div class="editor-footer">
+                        <span class="char-count">
+                            <i class="fas fa-keyboard"></i> 
+                            Characters: <span id="charCount">0</span> / 3000
+                        </span>
+                        <span class="line-count">
+                            <i class="fas fa-align-left"></i> 
+                            Lines: <span id="lineCount">0</span>
+                        </span>
+                        <span class="smart-paste-indicator" title="Smart Paste: Converts **bold** and *italic* markdown to Unicode">
+                            <i class="fas fa-magic"></i> Smart Paste
+                        </span>
+                    </div>
+                </div>
+
+                <div class="preview-panel">
+                    <div class="panel-header">
+                        <h3><i class="fas fa-eye"></i> Preview</h3>
+                        <button class="copy-btn" onclick="copyToClipboard()">
+                            <i class="fas fa-copy"></i> Copy
+                        </button>
+                    </div>
+                    <div id="preview" class="preview-content">
+                        <p class="placeholder-text">Your formatted post will appear here...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Templates -->
+            <div class="templates-section">
+                <h3><i class="fas fa-th-large"></i> Quick Templates</h3>
+                <div class="templates-grid">
+                    <button class="template-btn" onclick="loadTemplate('announcement')">
+                        <i class="fas fa-bullhorn"></i>
+                        <span>Announcement</span>
+                    </button>
+                    <button class="template-btn" onclick="loadTemplate('tips')">
+                        <i class="fas fa-lightbulb"></i>
+                        <span>Tips & Insights</span>
+                    </button>
+                    <button class="template-btn" onclick="loadTemplate('story')">
+                        <i class="fas fa-book"></i>
+                        <span>Story</span>
+                    </button>
+                    <button class="template-btn" onclick="loadTemplate('question')">
+                        <i class="fas fa-question-circle"></i>
+                        <span>Question</span>
+                    </button>
+                    <button class="template-btn" onclick="loadTemplate('achievement')">
+                        <i class="fas fa-trophy"></i>
+                        <span>Achievement</span>
+                    </button>
+                    <button class="template-btn" onclick="loadTemplate('event')">
+                        <i class="fas fa-calendar"></i>
+                        <span>Event</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Emoji Picker Modal -->
+            <div id="emojiModal" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Select Emoji</h3>
+                        <button class="close-modal" onclick="closeEmojiModal()">&times;</button>
+                    </div>
+                    <div class="emoji-categories">
+                        <button class="emoji-cat-btn active" onclick="showEmojiCategory('popular')">Popular</button>
+                        <button class="emoji-cat-btn" onclick="showEmojiCategory('smileys')">Smileys</button>
+                        <button class="emoji-cat-btn" onclick="showEmojiCategory('gestures')">Gestures</button>
+                        <button class="emoji-cat-btn" onclick="showEmojiCategory('objects')">Objects</button>
+                        <button class="emoji-cat-btn" onclick="showEmojiCategory('symbols')">Symbols</button>
+                    </div>
+                    <div id="emojiGrid" class="emoji-grid"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Made with <i class="fas fa-heart"></i> for LinkedIn creators</p>
+            <p class="tip">💡 Tip: Use formatted posts to stand out and increase engagement!</p>
+        </footer>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>
