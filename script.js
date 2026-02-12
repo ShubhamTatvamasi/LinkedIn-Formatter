@@ -19,6 +19,129 @@ const unicodeStyles = {
     }
 };
 
+// Convert HTML rich text to Unicode formatting
+function convertHtmlToUnicode(html, plainText) {
+    let hasFormatting = false;
+    
+    // Create a temporary div to parse HTML
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = html;
+    
+    // Check if there's any actual formatting
+    const hasBold = /<(b|strong)[^>]*>/i.test(html);
+    const hasItalic = /<(i|em)[^>]*>/i.test(html);
+    const hasHeaders = /<h[1-6][^>]*>/i.test(html);
+    const hasLists = /<(ul|ol|li)[^>]*>/i.test(html);
+    
+    if (!hasBold && !hasItalic && !hasHeaders && !hasLists) {
+        // No formatting found, return plain text as-is
+        return {
+            text: plainText,
+            hasFormatting: false
+        };
+    }
+    
+    // Build a map of text with formatting
+    const formattingMap = new Map();
+    
+    function buildFormattingMap(node, formats = []) {
+        if (node.nodeType === Node.TEXT_NODE) {
+            const text = node.textContent;
+            if (text) {
+                for (let i = 0; i < text.length; i++) {
+                    formattingMap.set(formattingMap.size, {
+                        char: text[i],
+                        formats: [...formats]
+                    });
+                }
+            }
+            return;
+        }
+        
+        if (node.nodeType === Node.ELEMENT_NODE) {
+            const tagName = node.tagName.toLowerCase();
+            const newFormats = [...formats];
+            
+            if (tagName === 'b' || tagName === 'strong') {
+                newFormats.push('bold');
+                hasFormatting = true;
+            } else if (tagName === 'i' || tagName === 'em') {
+                newFormats.push('italic');
+                hasFormatting = true;
+            } else if (/^h[1-6]$/.test(tagName)) {
+                newFormats.push('bold');
+                hasFormatting = true;
+            } else if (tagName === 'li') {
+                // Add bullet before list item
+                formattingMap.set(formattingMap.size, {
+                    char: '•',
+                    formats: []
+                });
+                formattingMap.set(formattingMap.size, {
+                    char: ' ',
+                    formats: []
+                });
+                hasFormatting = true;
+            }
+            
+            for (let child of node.childNodes) {
+                buildFormattingMap(child, newFormats);
+            }
+        }
+    }
+    
+    buildFormattingMap(tempDiv);
+    
+    // Apply formatting to plain text while preserving its structure
+    const lines = plainText.split('\n');
+    const result = [];
+    let mapIndex = 0;
+    
+    for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
+        const line = lines[lineIdx];
+        let formattedLine = '';
+        
+        for (let charIdx = 0; charIdx < line.length; charIdx++) {
+            const char = line[charIdx];
+            
+            // Find matching char in formatting map
+            while (mapIndex < formattingMap.size) {
+                const mapEntry = formattingMap.get(mapIndex);
+                
+                // Skip whitespace-only differences
+                if (mapEntry.char === char || (char.match(/\s/) && mapEntry.char.match(/\s/))) {
+                    const formats = mapEntry.formats;
+                    let formattedChar = char;
+                    
+                    // Apply formats
+                    if (formats.includes('bold') && unicodeStyles.bold[char]) {
+                        formattedChar = unicodeStyles.bold[char];
+                    } else if (formats.includes('italic') && unicodeStyles.italic[char]) {
+                        formattedChar = unicodeStyles.italic[char];
+                    }
+                    
+                    formattedLine += formattedChar;
+                    mapIndex++;
+                    break;
+                } else if (mapEntry.char === '•') {
+                    // List item marker, skip it in map but don't add to output
+                    mapIndex++;
+                    continue;
+                }
+                
+                mapIndex++;
+            }
+        }
+        
+        result.push(formattedLine || line);
+    }
+    
+    return {
+        text: result.join('\n'),
+        hasFormatting: hasFormatting
+    };
+}
+
 // Convert markdown formatting to Unicode
 function convertMarkdownToUnicode(text) {
     // Convert **bold** to Unicode bold
@@ -93,19 +216,38 @@ function initializeUndoSystem() {
     editor.addEventListener('paste', function(e) {
         e.preventDefault();
         
-        // Get pasted content
+        // Try to get HTML content first (for rich text)
+        let htmlContent = '';
         let pastedText = '';
+        
         if (e.clipboardData && e.clipboardData.getData) {
+            htmlContent = e.clipboardData.getData('text/html');
             pastedText = e.clipboardData.getData('text/plain');
         } else if (window.clipboardData && window.clipboardData.getData) {
+            htmlContent = window.clipboardData.getData('HTML');
             pastedText = window.clipboardData.getData('Text');
         }
         
-        // Check if markdown exists
-        const hasMarkdown = /\*\*[^\*]+?\*\*|__[^_]+?__|\*[^\*]+?\*|_[^_]+?_/.test(pastedText);
+        let convertedText = pastedText;
+        let hasFormatting = false;
         
-        // Convert markdown-style formatting to Unicode
-        const convertedText = convertMarkdownToUnicode(pastedText);
+        // If HTML content exists, extract and convert formatting while preserving original text structure
+        if (htmlContent) {
+            const result = convertHtmlToUnicode(htmlContent, pastedText);
+            if (result.hasFormatting) {
+                convertedText = result.text;
+                hasFormatting = true;
+            }
+        }
+        
+        // If no HTML formatting found, check for markdown
+        if (!hasFormatting) {
+            const hasMarkdown = /\*\*[^\*]+?\*\*|__[^_]+?__|\*[^\*]+?\*|_[^_]+?_/.test(pastedText);
+            if (hasMarkdown) {
+                convertedText = convertMarkdownToUnicode(pastedText);
+                hasFormatting = convertedText !== pastedText;
+            }
+        }
         
         // Insert at cursor position
         const start = editor.selectionStart;
@@ -116,9 +258,9 @@ function initializeUndoSystem() {
         editor.value = before + convertedText + after;
         editor.selectionStart = editor.selectionEnd = start + convertedText.length;
         
-        // Show notification if markdown was converted
-        if (hasMarkdown && convertedText !== pastedText) {
-            showToast('✨ Markdown converted to Unicode formatting!', 'success');
+        // Show notification if formatting was converted
+        if (hasFormatting) {
+            showToast('✨ Formatting converted to Unicode!', 'success');
         }
         
         updatePreview();
