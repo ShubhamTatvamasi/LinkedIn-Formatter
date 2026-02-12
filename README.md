@@ -2,6 +2,10 @@
 
 A modern, feature-rich static website for formatting LinkedIn posts with professional styling and rich text features. Transform your LinkedIn content with beautiful formatting, emojis, templates, and more!
 
+## 🌐 Live Demo
+
+**[Try it now at shubhamtatvamasi.com/LinkedIn-Formatter](https://shubhamtatvamasi.com/LinkedIn-Formatter/)**
+
 ![LinkedIn Formatter](https://img.shields.io/badge/LinkedIn-Formatter-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)
 ![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)
 ![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white)
