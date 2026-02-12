@@ -16,6 +16,7 @@ A modern, feature-rich static website for formatting LinkedIn posts with profess
 ### 📝 Text Formatting
 - **Bold Text** - Convert text to bold Unicode characters
 - **Italic Text** - Apply italic styling to your text
+- **Monospace/Code** - Format code snippets with monospace Unicode font
 - **Underline** - Add underlines to emphasize content
 - **Strikethrough** - Cross out text for edits or emphasis
 
@@ -37,7 +38,13 @@ A modern, feature-rich static website for formatting LinkedIn posts with profess
 - Easy-to-use emoji picker
 
 ### 📱 User Experience
-- **Smart Paste** - Automatically converts markdown formatting (**bold**, *italic*) to Unicode
+- **Smart Paste** - Automatically converts formatted text from ChatGPT, Word, and other sources
+  - Bold (**text**) → 𝗯𝗼𝗹𝗱
+  - Italic (*text*) → *𝘪𝘵𝘢𝘭𝘪𝘤*
+  - Code (`text`) → 𝚖𝚘𝚗𝚘𝚜𝚙𝚊𝚌𝚎
+  - Headers → Bold text
+  - Bullet lists → Formatted bullets
+  - Preserves original line spacing
 - **Undo/Redo** - Full undo/redo support with keyboard shortcuts
 - **Real-time Preview** - See your formatted post instantly
 - **Character Counter** - Track your post length (LinkedIn limit: 3000)
@@ -142,7 +149,26 @@ The design follows LinkedIn's professional color palette:
 4. **Headers grab attention** - Use them for key points
 5. **Lists are scannable** - Perfect for tips and highlights
 6. **Test on mobile** - Many LinkedIn users browse on phones
-7. **Smart Paste works with markdown** - Copy text with `**bold**` or `*italic*` and it auto-converts to Unicode!
+7. **Smart Paste works with formatted text** - Copy text from ChatGPT, Word, Google Docs, etc. and it automatically detects and converts formatting!
+8. **Code snippets** - Use monospace format for technical content like `docker`, `kubernetes`, etc.
+
+## 🎯 Future Enhancement Ideas
+
+- **Superscript/Subscript** - Add mathematical and chemical notation support
+- **Underline Unicode** - Alternative underline formatting
+- **Text spacing/width options** - Adjust character spacing for visual impact
+- **Color-coded text** - Use Unicode mathematical symbols for different visual effects
+- **Markdown to Unicode converter** - Batch convert entire markdown documents
+- **Rich text export** - Export formatted text in multiple formats
+- **Browser auto-save drafts** - Save work locally in browser storage
+- **Dark mode** - Easier on the eyes for evening users
+- **Syntax highlighting** - Highlight code with colors
+- **Tables** - Format tabular data for LinkedIn
+- **more emoji categories** - Expand emoji library
+- **Share templates** - Community-created post templates
+- **Analytics** - Track which formatting styles perform best
+- **Mobile app** - Dedicated iOS/Android application
+- **API for integrations** - Connect with other productivity tools
 
 ## 🤝 Contributing
 

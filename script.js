@@ -358,7 +358,7 @@ function formatText(style) {
     
     let formattedText = '';
     
-    if (style === 'bold' || style === 'italic') {
+    if (style === 'bold' || style === 'italic' || style === 'monospace') {
         formattedText = selectedText.split('').map(char => {
             return unicodeStyles[style][char] || char;
         }).join('');

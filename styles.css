@@ -102,39 +102,39 @@ body {
 /* Toolbar */
 .toolbar {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
     margin-bottom: 30px;
     padding-bottom: 30px;
     border-bottom: 2px solid var(--border-color);
 }
 
 .toolbar-section h3 {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     color: var(--text-secondary);
-    margin-bottom: 10px;
+    margin-bottom: 8px;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
 }
 
 .button-group {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     flex-wrap: wrap;
 }
 
 .tool-btn {
     background: var(--surface-color);
     border: 2px solid var(--border-color);
-    padding: 10px 15px;
+    padding: 8px 12px;
     border-radius: var(--radius-md);
     cursor: pointer;
     transition: var(--transition);
-    font-size: 1rem;
+    font-size: 0.95rem;
     color: var(--text-primary);
     font-weight: 600;
-    min-width: 45px;
+    min-width: 40px;
 }
 
 .tool-btn:hover {
