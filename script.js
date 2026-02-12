@@ -16,6 +16,15 @@ const unicodeStyles = {
         'A': '𝘈', 'B': '𝘉', 'C': '𝘊', 'D': '𝘋', 'E': '𝘌', 'F': '𝘍', 'G': '𝘎', 'H': '𝘏', 'I': '𝘐', 'J': '𝘑',
         'K': '𝘒', 'L': '𝘓', 'M': '𝘔', 'N': '𝘕', 'O': '𝘖', 'P': '𝘗', 'Q': '𝘘', 'R': '𝘙', 'S': '𝘚', 'T': '𝘛',
         'U': '𝘜', 'V': '𝘝', 'W': '𝘞', 'X': '𝘟', 'Y': '𝘠', 'Z': '𝘡'
+    },
+    monospace: {
+        'a': '𝚊', 'b': '𝚋', 'c': '𝚌', 'd': '𝚍', 'e': '𝚎', 'f': '𝚏', 'g': '𝚐', 'h': '𝚑', 'i': '𝚒', 'j': '𝚓',
+        'k': '𝚔', 'l': '𝚕', 'm': '𝚖', 'n': '𝚗', 'o': '𝚘', 'p': '𝚙', 'q': '𝚚', 'r': '𝚛', 's': '𝚜', 't': '𝚝',
+        'u': '𝚞', 'v': '𝚟', 'w': '𝚠', 'x': '𝚡', 'y': '𝚢', 'z': '𝚣',
+        'A': '𝙰', 'B': '𝙱', 'C': '𝙲', 'D': '𝙳', 'E': '𝙴', 'F': '𝙵', 'G': '𝙶', 'H': '𝙷', 'I': '𝙸', 'J': '𝙹',
+        'K': '𝙺', 'L': '𝙻', 'M': '𝙼', 'N': '𝙽', 'O': '𝙾', 'P': '𝙿', 'Q': '𝚀', 'R': '𝚁', 'S': '𝚂', 'T': '𝚃',
+        'U': '𝚄', 'V': '𝚅', 'W': '𝚆', 'X': '𝚇', 'Y': '𝚈', 'Z': '𝚉',
+        '0': '𝟶', '1': '𝟷', '2': '𝟸', '3': '𝟹', '4': '𝟺', '5': '𝟻', '6': '𝟼', '7': '𝟽', '8': '𝟾', '9': '𝟿'
     }
 };
 
@@ -68,6 +77,9 @@ function convertHtmlToUnicode(html, plainText) {
             } else if (tagName === 'i' || tagName === 'em') {
                 newFormats.push('italic');
                 hasFormatting = true;
+            } else if (tagName === 'code') {
+                newFormats.push('monospace');
+                hasFormatting = true;
             } else if (/^h[1-6]$/.test(tagName)) {
                 newFormats.push('bold');
                 hasFormatting = true;
@@ -118,6 +130,8 @@ function convertHtmlToUnicode(html, plainText) {
                         formattedChar = unicodeStyles.bold[char];
                     } else if (formats.includes('italic') && unicodeStyles.italic[char]) {
                         formattedChar = unicodeStyles.italic[char];
+                    } else if (formats.includes('monospace') && unicodeStyles.monospace[char]) {
+                        formattedChar = unicodeStyles.monospace[char];
                     }
                     
                     formattedLine += formattedChar;
@@ -144,6 +158,10 @@ function convertHtmlToUnicode(html, plainText) {
 
 // Convert markdown formatting to Unicode
 function convertMarkdownToUnicode(text) {
+    // Convert `code` to Unicode monospace (before bold/italic to avoid conflicts)
+    text = text.replace(/`([^`]+?)`/g, function(match, content) {
+        return content.split('').map(char => unicodeStyles.monospace[char] || char).join('');
+    });
     // Convert **bold** to Unicode bold
     text = text.replace(/\*\*([^\*]+?)\*\*/g, function(match, content) {
         return content.split('').map(char => unicodeStyles.bold[char] || char).join('');
