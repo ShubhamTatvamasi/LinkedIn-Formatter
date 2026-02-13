@@ -1224,19 +1224,19 @@ document.addEventListener('keydown', function(e) {
     }
     
     // Ctrl/Cmd + B for bold
-    if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
         e.preventDefault();
         formatText('bold');
     }
     
     // Ctrl/Cmd + I for italic
-    if ((e.ctrlKey || e.metaKey) && e.key === 'i') {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'i') {
         e.preventDefault();
         formatText('italic');
     }
     
     // Ctrl/Cmd + U for underline
-    if ((e.ctrlKey || e.metaKey) && e.key === 'u') {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'u') {
         e.preventDefault();
         formatText('underline');
     }
