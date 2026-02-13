@@ -97,93 +97,6 @@ function hasEmojiSequence(text, index) {
     return false;
 }
 
-// Process HTML to add spacing between consecutive bold/strong sections
-function processHtmlForSpacing(html, plainText) {
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = html;
-    
-    const lines = [];
-    let prevWasBold = false;
-    let prevWasBlock = false;
-    
-    function processNode(node) {
-        if (node.nodeType === Node.TEXT_NODE) {
-            const text = node.textContent.trim();
-            if (text) {
-                // Only add if not already added (avoid duplicates)
-                if (lines.length === 0 || lines[lines.length - 1] !== text) {
-                    lines.push(text);
-                }
-                prevWasBold = false;
-                prevWasBlock = false;
-            }
-            return;
-        }
-        
-        if (node.nodeType === Node.ELEMENT_NODE) {
-            const tagName = node.tagName.toLowerCase();
-            const isBoldTag = tagName === 'b' || tagName === 'strong';
-            const isBlockTag = /^(p|div|h[1-6])$/.test(tagName);
-            
-            // If this is a bold section and previous was also bold/block, add spacing
-            if ((isBoldTag || isBlockTag) && prevWasBold && prevWasBlock && lines.length > 0 && lines[lines.length - 1] !== '') {
-                lines.push(''); // Add blank line for spacing
-            }
-            
-            const text = node.textContent.trim();
-            if (text && (isBoldTag || isBlockTag)) {
-                // Extract text from bold or block elements
-                if (lines.length === 0 || lines[lines.length - 1] !== text) {
-                    lines.push(text);
-                }
-                prevWasBold = isBoldTag;
-                prevWasBlock = isBlockTag;
-            } else {
-                // Process children
-                for (let child of node.childNodes) {
-                    processNode(child);
-                }
-            }
-        }
-    }
-    
-    processNode(tempDiv);
-    
-    return lines.join('\n');
-}
-
-// Detect and add spacing between consecutive bold/strong sections
-function addSpacingBetweenBoldSections(plainText) {
-    // Split by lines and check for consecutive lines that are likely bold sections
-    const lines = plainText.split('\n');
-    const result = [];
-    
-    for (let i = 0; i < lines.length; i++) {
-        const line = lines[i].trim();
-        const nextLine = i + 1 < lines.length ? lines[i + 1].trim() : '';
-        
-        result.push(lines[i]);
-        
-        // Add spacing if:
-        // - Current line is not empty
-        // - Next line exists and is not empty
-        // - Next line is relatively short (likely a heading) and both look like potential headings
-        if (line && nextLine && nextLine.length < 100 && line.length > 0) {
-            // Check if both lines look like they could be bold sections
-            // (no newline between them in the original paste)
-            const currentHasContent = /[a-zA-Z0-9]/.test(line);
-            const nextHasContent = /[a-zA-Z0-9]/.test(nextLine);
-            
-            if (currentHasContent && nextHasContent && !line.endsWith('\n')) {
-                // Add blank line between potential bold sections
-                result.push('');
-            }
-        }
-    }
-    
-    return result.join('\n');
-}
-
 // Convert HTML rich text to Unicode formatting
 function convertHtmlToUnicode(html, plainText) {
     let hasFormatting = false;
@@ -323,6 +236,45 @@ function convertHtmlToUnicode(html, plainText) {
     }).filter(line => line !== null);
     
     finalText = bulletLines.join('\n').replace(/\n{3,}/g, '\n\n');
+    
+    // Add spacing between consecutive headers (for pasted content with multiple headers)
+    const headerElements = tempDiv.querySelectorAll('h1, h2, h3, h4, h5, h6');
+    if (headerElements.length >= 2) {
+        // Get header texts in order
+        const headerTexts = Array.from(headerElements).map(h => h.textContent.trim());
+        
+        // Add newline between consecutive headers in finalText
+        const lines = finalText.split('\n');
+        const spacedLines = [];
+        
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            const trimmedLine = line.trim();
+            
+            // Convert formatted text back to plain for comparison
+            let plainLine = Array.from(trimmedLine).map(char => reverseUnicodeMap[char] || char).join('');
+            
+            // Check if this line matches any header text
+            const isHeader = headerTexts.includes(plainLine);
+            
+            // Check previous line
+            let prevIsHeader = false;
+            if (i > 0) {
+                const prevLine = lines[i - 1].trim();
+                let prevPlain = Array.from(prevLine).map(char => reverseUnicodeMap[char] || char).join('');
+                prevIsHeader = headerTexts.includes(prevPlain);
+            }
+            
+            // Add blank line between consecutive headers
+            if (prevIsHeader && isHeader && trimmedLine) {
+                spacedLines.push('');
+            }
+            
+            spacedLines.push(line);
+        }
+        
+        finalText = spacedLines.join('\n');
+    }
     
     return {
         text: finalText,
@@ -543,20 +495,22 @@ function initializeUndoSystem() {
         const bulletPattern = /^[\s]*([-•*])\s+/m;
         const hasBullets = bulletPattern.test(pastedText);
         
-        // If HTML content exists, try to extract formatting
+// Add spacing between consecutive headers (h1, h2, etc.)
+function addSpacingForBoldLines(htmlContent, plainText) {
+    if (!htmlContent || !plainText) return plainText;
+    
+    // Check for multiple header tags
+    const hasHeaders = /<h[1-6][^>]*>/i.test(htmlContent);
+    if (!hasHeaders) return plainText;
+    
+    // Just return plainText as-is - spacing will be handled by convertHtmlToUnicode
+    return plainText;
+}
         if (htmlContent) {
-            // First, try to process for bold section spacing
-            const hasConsecutiveBold = /<(b|strong).*?<(b|strong|p|div)/i.test(htmlContent);
-            if (hasConsecutiveBold) {
-                convertedText = processHtmlForSpacing(htmlContent, pastedText);
+            const result = convertHtmlToUnicode(htmlContent, pastedText);
+            if (result.hasFormatting) {
+                convertedText = result.text;
                 hasFormatting = true;
-            } else {
-                // Use regular conversion for other formatting
-                const result = convertHtmlToUnicode(htmlContent, pastedText);
-                if (result.hasFormatting) {
-                    convertedText = result.text;
-                    hasFormatting = true;
-                }
             }
         }
         
