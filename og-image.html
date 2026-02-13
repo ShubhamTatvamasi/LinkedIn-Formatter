@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generate OG Image</title>
+</head>
+<body>
+    <canvas id="canvas" width="1200" height="630"></canvas>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Background gradient
+        const gradient = ctx.createLinearGradient(0, 0, 1200, 630);
+        gradient.addColorStop(0, '#0a66c2');
+        gradient.addColorStop(1, '#004182');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 1200, 630);
+
+        // Title
+        ctx.font = 'bold 72px Arial, sans-serif';
+        ctx.fillStyle = 'white';
+        ctx.textAlign = 'center';
+        ctx.fillText('LinkedIn Formatter', 600, 180);
+
+        // Subtitle
+        ctx.font = '40px Arial, sans-serif';
+        ctx.fillStyle = '#e8f0ff';
+        ctx.fillText('Professional Post Formatting Tool', 600, 260);
+
+        // Features
+        ctx.font = '32px Arial, sans-serif';
+        ctx.fillStyle = 'white';
+        ctx.fillText('✨ Bold • Italic • Emojis • Lists • Templates', 600, 340);
+
+        // More features
+        ctx.font = '28px Arial, sans-serif';
+        ctx.fillStyle = '#e8f0ff';
+        ctx.fillText('🚀 Smart Paste • Real-time Preview • Undo/Redo', 600, 390);
+
+        // CTA
+        ctx.font = 'bold 36px Arial, sans-serif';
+        ctx.fillStyle = '#00ff88';
+        ctx.fillText('Format Your Posts Like a Pro', 600, 480);
+
+        // Footer
+        ctx.font = '20px Arial, sans-serif';
+        ctx.fillStyle = '#e8f0ff';
+        ctx.fillText('Free • No Sign Up • Works with ChatGPT, Word & Google Docs', 600, 560);
+
+        // Download
+        const link = document.createElement('a');
+        link.href = canvas.toDataURL('image/png');
+        link.download = 'og-image.png';
+        link.click();
+    </script>
+</body>
+</html>
