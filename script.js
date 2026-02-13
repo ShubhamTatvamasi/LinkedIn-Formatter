@@ -1211,14 +1211,14 @@ window.onclick = function(event) {
 // Keyboard shortcuts
 document.addEventListener('keydown', function(e) {
     // Ctrl/Cmd + Z for undo
-    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) {
         e.preventDefault();
         undo();
     }
     
     // Ctrl/Cmd + Shift + Z or Ctrl/Cmd + Y for redo
-    if (((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'z') || 
-        ((e.ctrlKey || e.metaKey) && e.key === 'y')) {
+    if (((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'z') || 
+        ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y')) {
         e.preventDefault();
         redo();
     }
