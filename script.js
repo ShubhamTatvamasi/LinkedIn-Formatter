@@ -481,14 +481,24 @@ function initializeUndoSystem() {
         let pastedText = '';
         
         if (e.clipboardData && e.clipboardData.getData) {
-            htmlContent = e.clipboardData.getData('text/html');
-            pastedText = e.clipboardData.getData('text/plain');
+            htmlContent = e.clipboardData.getData('text/html') || '';
+            pastedText = e.clipboardData.getData('text/plain') || '';
         } else if (window.clipboardData && window.clipboardData.getData) {
-            htmlContent = window.clipboardData.getData('HTML');
-            pastedText = window.clipboardData.getData('Text');
+            htmlContent = window.clipboardData.getData('HTML') || '';
+            pastedText = window.clipboardData.getData('Text') || '';
         }
         
-        let convertedText = pastedText;
+        // Fallback: if no text/html available, try to get structured clipboard data
+        if (!htmlContent && !pastedText && e.clipboardData && e.clipboardData.types) {
+            for (let type of e.clipboardData.types) {
+                if (type.includes('text')) {
+                    pastedText = e.clipboardData.getData(type);
+                    break;
+                }
+            }
+        }
+        
+        let convertedText = pastedText || '';
         let hasFormatting = false;
         
         // First check if plain text has bullet points
@@ -554,7 +564,18 @@ function addSpacingForBoldLines(htmlContent, plainText) {
         }
         
         updatePreview();
-        saveState();
+        
+        // Update currentState immediately after paste
+        currentState = editor.value;
+        
+        // Save state after paste (clears redo stack on new change)
+        if (undoStack[undoStack.length - 1] !== currentState) {
+            undoStack.push(currentState);
+            redoStack = [];
+            if (undoStack.length > 50) {
+                undoStack.shift();
+            }
+        }
     });
     
     // Handle cut events
