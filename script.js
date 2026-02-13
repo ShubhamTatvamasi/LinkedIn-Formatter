@@ -1211,32 +1211,32 @@ window.onclick = function(event) {
 // Keyboard shortcuts
 document.addEventListener('keydown', function(e) {
     // Ctrl/Cmd + Z for undo
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) {
+    if ((e.ctrlKey || e.metaKey) && e.code === 'KeyZ' && !e.shiftKey) {
         e.preventDefault();
         undo();
     }
     
     // Ctrl/Cmd + Shift + Z or Ctrl/Cmd + Y for redo
-    if (((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'z') || 
-        ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y')) {
+    if (((e.ctrlKey || e.metaKey) && e.shiftKey && e.code === 'KeyZ') || 
+        ((e.ctrlKey || e.metaKey) && e.code === 'KeyY')) {
         e.preventDefault();
         redo();
     }
     
     // Ctrl/Cmd + B for bold
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
+    if ((e.ctrlKey || e.metaKey) && e.code === 'KeyB') {
         e.preventDefault();
         formatText('bold');
     }
     
     // Ctrl/Cmd + I for italic
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'i') {
+    if ((e.ctrlKey || e.metaKey) && e.code === 'KeyI') {
         e.preventDefault();
         formatText('italic');
     }
     
     // Ctrl/Cmd + U for underline
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'u') {
+    if ((e.ctrlKey || e.metaKey) && e.code === 'KeyU') {
         e.preventDefault();
         formatText('underline');
     }
