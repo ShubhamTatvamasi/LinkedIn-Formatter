@@ -28,6 +28,20 @@ const unicodeStyles = {
     }
 };
 
+// Build reverse map for unicode to plain text conversion (created once at load)
+function buildReverseMap() {
+    const map = {};
+    for (let style in unicodeStyles) {
+        const styleMap = unicodeStyles[style];
+        for (let plain in styleMap) {
+            const formatted = styleMap[plain];
+            map[formatted] = plain;
+        }
+    }
+    return map;
+}
+const reverseUnicodeMap = buildReverseMap();
+
 // Convert HTML rich text to Unicode formatting
 function convertHtmlToUnicode(html, plainText) {
     let hasFormatting = false;
@@ -174,26 +188,26 @@ function convertHtmlToUnicode(html, plainText) {
 function convertMarkdownToUnicode(text) {
     // Convert `code` to Unicode monospace (before bold/italic to avoid conflicts)
     text = text.replace(/`([^`]+?)`/g, function(match, content) {
-        return content.split('').map(char => unicodeStyles.monospace[char] || char).join('');
+        return Array.from(content).map(char => unicodeStyles.monospace[char] || char).join('');
     });
     // Convert **bold** to Unicode bold
     text = text.replace(/\*\*([^\*]+?)\*\*/g, function(match, content) {
-        return content.split('').map(char => unicodeStyles.bold[char] || char).join('');
+        return Array.from(content).map(char => unicodeStyles.bold[char] || char).join('');
     });
     
     // Convert __bold__ to Unicode bold
     text = text.replace(/__([^_]+?)__/g, function(match, content) {
-        return content.split('').map(char => unicodeStyles.bold[char] || char).join('');
+        return Array.from(content).map(char => unicodeStyles.bold[char] || char).join('');
     });
     
     // Convert *italic* to Unicode italic (single asterisk)
     text = text.replace(/\*([^\*]+?)\*/g, function(match, content) {
-        return content.split('').map(char => unicodeStyles.italic[char] || char).join('');
+        return Array.from(content).map(char => unicodeStyles.italic[char] || char).join('');
     });
     
     // Convert _italic_ to Unicode italic (single underscore)
     text = text.replace(/_([^_]+?)_/g, function(match, content) {
-        return content.split('').map(char => unicodeStyles.italic[char] || char).join('');
+        return Array.from(content).map(char => unicodeStyles.italic[char] || char).join('');
     });
     
     return text;
@@ -487,13 +501,16 @@ function formatText(style) {
     let formattedText = '';
     
     if (style === 'bold' || style === 'italic' || style === 'monospace') {
-        formattedText = selectedText.split('').map(char => {
+        // Use Array.from() to handle surrogate pairs properly
+        formattedText = Array.from(selectedText).map(char => {
             return unicodeStyles[style][char] || char;
         }).join('');
     } else if (style === 'underline') {
-        formattedText = selectedText.split('').map(char => char + '\u0332').join('');
+        // Use Array.from() to handle surrogate pairs properly
+        formattedText = Array.from(selectedText).map(char => char + '\u0332').join('');
     } else if (style === 'strikethrough') {
-        formattedText = selectedText.split('').map(char => char + '\u0336').join('');
+        // Use Array.from() to handle surrogate pairs properly
+        formattedText = Array.from(selectedText).map(char => char + '\u0336').join('');
     }
     
     const newText = editor.value.substring(0, start) + formattedText + editor.value.substring(end);
@@ -502,6 +519,98 @@ function formatText(style) {
     editor.focus();
     saveState();
     updatePreview();
+}
+
+// Change text case
+function changeCase(caseType) {
+    const editor = document.getElementById('editor');
+    const start = editor.selectionStart;
+    const end = editor.selectionEnd;
+    const selectedText = editor.value.substring(start, end);
+    
+    if (!selectedText) {
+        showToast('Please select text to change case', 'warning');
+        return;
+    }
+    
+    // Convert unicode formatted text back to plain text using global reverseUnicodeMap
+    // Use Array.from() to handle surrogate pairs properly
+    let plainText = Array.from(selectedText).map(char => {
+        // Check if it's a formatted character
+        if (reverseUnicodeMap[char]) {
+            return reverseUnicodeMap[char];
+        }
+        // Remove combining marks (underline, strikethrough)
+        if (char === '\u0332' || char === '\u0336') {
+            return '';
+        }
+        return char;
+    }).join('');
+    
+    let newText = plainText;
+    
+    if (caseType === 'upper') {
+        newText = plainText.toUpperCase();
+    } else if (caseType === 'lower') {
+        newText = plainText.toLowerCase();
+    } else if (caseType === 'title') {
+        // Title case: capitalize first letter of EACH word
+        newText = plainText
+            .toLowerCase()
+            .split(' ')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
+    } else if (caseType === 'sentence') {
+        // Sentence case: capitalize first letter after periods and at start, preserve newlines
+        newText = plainText
+            .toLowerCase()
+            .replace(/(\.|^)(\s*)([a-z])/g, (match, period, whitespace, letter) => {
+                return period + whitespace + letter.toUpperCase();
+            });
+    }
+    
+    const fullText = editor.value.substring(0, start) + newText + editor.value.substring(end);
+    editor.value = fullText;
+    editor.setSelectionRange(start, start + newText.length);
+    editor.focus();
+    saveState();
+    updatePreview();
+    showToast(`✓ Case changed to ${caseType}`, 'success');
+}
+
+// Clear all formatting from text
+function clearFormatting() {
+    const editor = document.getElementById('editor');
+    const start = editor.selectionStart;
+    const end = editor.selectionEnd;
+    
+    if (start === end) {
+        showToast('Please select text to clear formatting', 'warning');
+        return;
+    }
+    
+    const selectedText = editor.value.substring(start, end);
+    
+    // Replace each character - use for...of to handle surrogate pairs properly
+    let cleanText = '';
+    for (const char of selectedText) {
+        // Check if it's a formatted character in reverse map
+        if (reverseUnicodeMap[char]) {
+            cleanText += reverseUnicodeMap[char];
+        }
+        // Remove combining marks (underline, strikethrough)
+        else if (char !== '\u0332' && char !== '\u0336') {
+            cleanText += char;
+        }
+    }
+    
+    const fullText = editor.value.substring(0, start) + cleanText + editor.value.substring(end);
+    editor.value = fullText;
+    editor.setSelectionRange(start, start + cleanText.length);
+    editor.focus();
+    saveState();
+    updatePreview();
+    showToast('✓ Formatting cleared', 'success');
 }
 
 // Add list formatting
@@ -547,14 +656,18 @@ function addHeader(level) {
     const selectedText = editor.value.substring(start, end);
     
     let headerText = selectedText || 'Header Text';
+    
+    // Convert header text to bold - use Array.from() to handle surrogate pairs
+    const boldText = Array.from(headerText).map(char => unicodeStyles.bold[char] || char).join('');
+    
     let formattedText = '';
     
     if (level === 'h1') {
-        formattedText = `━━━━━━━━━━━━━━━━━━━━\n${headerText.toUpperCase()}\n━━━━━━━━━━━━━━━━━━━━`;
+        formattedText = `━━━━━━━━━━━━━━━━━━━━\n${boldText.toUpperCase()}\n━━━━━━━━━━━━━━━━━━━━`;
     } else if (level === 'h2') {
-        formattedText = `▸ ${headerText.toUpperCase()}`;
+        formattedText = `▸ ${boldText.toUpperCase()}`;
     } else if (level === 'h3') {
-        formattedText = `◉ ${headerText}`;
+        formattedText = `◉ ${boldText}`;
     }
     
     if (selectedText) {
@@ -570,17 +683,19 @@ function addHeader(level) {
 }
 
 // Add divider
-function addDivider() {
+function addDivider(type = 'line1') {
     const editor = document.getElementById('editor');
-    const dividers = [
-        '\n━━━━━━━━━━━━━━━━━━━━\n',
-        '\n─────────────────────\n',
-        '\n• • • • • • • • • • •\n',
-        '\n▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬\n'
-    ];
+    
+    const dividers = {
+        'line1': '\n━━━━━━━━━━━━━━━━━━━━━━\n',
+        'line2': '\n──────────────────────\n',
+        'line3': '\n• • • • • • • • • • • • • • • • • • • • • • • • • • • • • • •\n',
+        'line4': '\n▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬\n'
+    };
+    
     saveState();
-    const randomDivider = dividers[Math.floor(Math.random() * dividers.length)];
-    insertAtCursor(editor, randomDivider);
+    const divider = dividers[type] || dividers['line1'];
+    insertAtCursor(editor, divider);
     updatePreview();
 }
 
@@ -688,14 +803,25 @@ function updatePreview() {
     const preview = document.getElementById('preview');
     const charCount = document.getElementById('charCount');
     const lineCount = document.getElementById('lineCount');
+    const wordCountEl = document.getElementById('wordCount');
+    const readingTimeEl = document.getElementById('readingTime');
     
     const text = editor.value;
     const chars = text.length;
     const lines = text.split('\n').length;
     
+    // Calculate word count
+    const words = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
+    
+    // Calculate reading time (average 200 words per minute for LinkedIn)
+    const readingTimeMinutes = Math.ceil(words / 200);
+    const readingTimeString = readingTimeMinutes < 1 ? '< 1 min' : readingTimeMinutes + ' min';
+    
     // Update counts
     charCount.textContent = chars;
     lineCount.textContent = lines;
+    wordCountEl.textContent = words;
+    readingTimeEl.textContent = readingTimeString;
     
     // Update character count color
     if (chars > 3000) {

@@ -34,6 +34,9 @@
                         <button class="tool-btn" onclick="redo()" title="Redo (Ctrl+Shift+Z)">
                             <i class="fas fa-redo"></i>
                         </button>
+                        <button class="tool-btn" onclick="clearFormatting()" title="Clear All Formatting">
+                            <i class="fas fa-eraser"></i>
+                        </button>
                     </div>
                 </div>
 
@@ -54,6 +57,24 @@
                         </button>
                         <button class="tool-btn" onclick="formatText('strikethrough')" title="Strikethrough">
                             <i class="fas fa-strikethrough"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="toolbar-section">
+                    <h3><i class="fas fa-text-height"></i> Case</h3>
+                    <div class="button-group">
+                        <button class="tool-btn" onclick="changeCase('upper')" title="UPPERCASE - All letters uppercase">
+                            <span style="font-weight: bold; font-size: 0.75rem;">ABC</span>
+                        </button>
+                        <button class="tool-btn" onclick="changeCase('lower')" title="lowercase - All letters lowercase">
+                            <span style="font-weight: bold; font-size: 0.75rem;">abc</span>
+                        </button>
+                        <button class="tool-btn" onclick="changeCase('title')" title="Title Case - Capitalize Each Word">
+                            <span style="font-weight: bold; font-size: 0.75rem;">Abc</span>
+                        </button>
+                        <button class="tool-btn" onclick="changeCase('sentence')" title="Sentence case - Capitalize after periods">
+                            <span style="font-weight: bold; font-size: 0.75rem;">Abc.</span>
                         </button>
                     </div>
                 </div>
@@ -88,8 +109,17 @@
                 <div class="toolbar-section">
                     <h3><i class="fas fa-icons"></i> Special</h3>
                     <div class="button-group">
-                        <button class="tool-btn" onclick="addDivider()" title="Add Divider">
-                            <i class="fas fa-minus"></i>
+                        <button class="tool-btn" onclick="addDivider('line1')" title="Add Line (━)">
+                            <i class="fas fa-minus" style="letter-spacing: 2px;"></i>
+                        </button>
+                        <button class="tool-btn" onclick="addDivider('line2')" title="Add Line (─)">
+                            <span style="font-weight: bold;">─ ─ ─</span>
+                        </button>
+                        <button class="tool-btn" onclick="addDivider('line3')" title="Add Line (• • •)">
+                            <span style="letter-spacing: 2px;">• • •</span>
+                        </button>
+                        <button class="tool-btn" onclick="addDivider('line4')" title="Add Line (▬)">
+                            <span>▬ ▬ ▬</span>
                         </button>
                         <button class="tool-btn" onclick="addQuote()" title="Add Quote">
                             <i class="fas fa-quote-left"></i>
@@ -129,6 +159,14 @@
                         <span class="line-count">
                             <i class="fas fa-align-left"></i> 
                             Lines: <span id="lineCount">0</span>
+                        </span>
+                        <span class="word-count">
+                            <i class="fas fa-words"></i>
+                            Words: <span id="wordCount">0</span>
+                        </span>
+                        <span class="reading-time">
+                            <i class="fas fa-hourglass-half"></i>
+                            Read Time: <span id="readingTime">0s</span>
                         </span>
                         <span class="smart-paste-indicator" title="Smart Paste: Auto-converts formatted text from ChatGPT, Word, Google Docs (bold, italic, code, headers, lists) to Unicode. Preserves original spacing.">
                             <i class="fas fa-magic"></i> Smart Paste
