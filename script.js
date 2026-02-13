@@ -68,6 +68,122 @@ function buildReverseMap() {
 }
 const reverseUnicodeMap = buildReverseMap();
 
+// Check if a character is an emoji or part of an emoji sequence
+function isEmoji(char) {
+    // Extended emoji detection covering common emoji ranges
+    const emojiRegex = /[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{27BF}]|[\u{1F000}-\u{1F02F}]|[\u{1F0A0}-\u{1F0FF}]|[\u{2300}-\u{23FF}]|[\u{2500}-\u{259F}]|[\u{2B50}]|[\u{1F1E6}-\u{1F1FF}]|[\u{200D}]|[\u{FE0F}]|[\u{20E3}]/u;
+    return emojiRegex.test(char);
+}
+
+// Check if a text contains emoji sequences (handles number emojis like 1️⃣)
+function hasEmojiSequence(text, index) {
+    // Check if current position starts an emoji with variation selector/combining marks
+    if (index >= text.length) return false;
+    
+    const char = text[index];
+    const nextChar = text[index + 1];
+    const charAfter = text[index + 2];
+    
+    // Check for digit emoji pattern: digit + variation selector (FE0F) + combining keycap (20E3)
+    if (/\d/.test(char) && nextChar === '\uFE0F' && charAfter === '\u20E3') {
+        return true;
+    }
+    
+    // Check for general emoji
+    if (isEmoji(char)) {
+        return true;
+    }
+    
+    return false;
+}
+
+// Process HTML to add spacing between consecutive bold/strong sections
+function processHtmlForSpacing(html, plainText) {
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = html;
+    
+    const lines = [];
+    let prevWasBold = false;
+    let prevWasBlock = false;
+    
+    function processNode(node) {
+        if (node.nodeType === Node.TEXT_NODE) {
+            const text = node.textContent.trim();
+            if (text) {
+                // Only add if not already added (avoid duplicates)
+                if (lines.length === 0 || lines[lines.length - 1] !== text) {
+                    lines.push(text);
+                }
+                prevWasBold = false;
+                prevWasBlock = false;
+            }
+            return;
+        }
+        
+        if (node.nodeType === Node.ELEMENT_NODE) {
+            const tagName = node.tagName.toLowerCase();
+            const isBoldTag = tagName === 'b' || tagName === 'strong';
+            const isBlockTag = /^(p|div|h[1-6])$/.test(tagName);
+            
+            // If this is a bold section and previous was also bold/block, add spacing
+            if ((isBoldTag || isBlockTag) && prevWasBold && prevWasBlock && lines.length > 0 && lines[lines.length - 1] !== '') {
+                lines.push(''); // Add blank line for spacing
+            }
+            
+            const text = node.textContent.trim();
+            if (text && (isBoldTag || isBlockTag)) {
+                // Extract text from bold or block elements
+                if (lines.length === 0 || lines[lines.length - 1] !== text) {
+                    lines.push(text);
+                }
+                prevWasBold = isBoldTag;
+                prevWasBlock = isBlockTag;
+            } else {
+                // Process children
+                for (let child of node.childNodes) {
+                    processNode(child);
+                }
+            }
+        }
+    }
+    
+    processNode(tempDiv);
+    
+    return lines.join('\n');
+}
+
+// Detect and add spacing between consecutive bold/strong sections
+function addSpacingBetweenBoldSections(plainText) {
+    // Split by lines and check for consecutive lines that are likely bold sections
+    const lines = plainText.split('\n');
+    const result = [];
+    
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        const nextLine = i + 1 < lines.length ? lines[i + 1].trim() : '';
+        
+        result.push(lines[i]);
+        
+        // Add spacing if:
+        // - Current line is not empty
+        // - Next line exists and is not empty
+        // - Next line is relatively short (likely a heading) and both look like potential headings
+        if (line && nextLine && nextLine.length < 100 && line.length > 0) {
+            // Check if both lines look like they could be bold sections
+            // (no newline between them in the original paste)
+            const currentHasContent = /[a-zA-Z0-9]/.test(line);
+            const nextHasContent = /[a-zA-Z0-9]/.test(nextLine);
+            
+            if (currentHasContent && nextHasContent && !line.endsWith('\n')) {
+                // Add blank line between potential bold sections
+                result.push('');
+            }
+        }
+    }
+    
+    return result.join('\n');
+}
+
 // Convert HTML rich text to Unicode formatting
 function convertHtmlToUnicode(html, plainText) {
     let hasFormatting = false;
@@ -76,14 +192,12 @@ function convertHtmlToUnicode(html, plainText) {
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = html;
     
-    // Check if there's any actual formatting
-    const hasBold = /<(b|strong)[^>]*>/i.test(html);
-    const hasItalic = /<(i|em)[^>]*>/i.test(html);
+    // Check if there's any actual formatting (excluding bold/italic which are common in pasted content)
     const hasHeaders = /<h[1-6][^>]*>/i.test(html);
     const hasLists = /<(ul|ol|li)[^>]*>/i.test(html);
     
-    if (!hasBold && !hasItalic && !hasHeaders && !hasLists) {
-        // No formatting found, return plain text as-is
+    if (!hasHeaders && !hasLists) {
+        // No meaningful formatting found, return plain text as-is (skip bold/italic conversion)
         return {
             text: plainText,
             hasFormatting: false
@@ -119,11 +233,11 @@ function convertHtmlToUnicode(html, plainText) {
             const newFormats = [...formats];
             
             if (tagName === 'b' || tagName === 'strong') {
-                newFormats.push('bold');
-                hasFormatting = true;
+                // Skip bold formatting from pasted content
+                // Users can manually apply bold using the toolbar button
             } else if (tagName === 'i' || tagName === 'em') {
-                newFormats.push('italic');
-                hasFormatting = true;
+                // Skip italic formatting from pasted content
+                // Users can manually apply italic using the toolbar button
             } else if (tagName === 'code') {
                 newFormats.push('monospace');
                 hasFormatting = true;
@@ -161,13 +275,19 @@ function convertHtmlToUnicode(html, plainText) {
                     const formats = mapEntry.formats;
                     let formattedChar = char;
                     
-                    // Apply formats
-                    if (formats.includes('bold') && unicodeStyles.bold[char]) {
-                        formattedChar = unicodeStyles.bold[char];
-                    } else if (formats.includes('italic') && unicodeStyles.italic[char]) {
-                        formattedChar = unicodeStyles.italic[char];
-                    } else if (formats.includes('monospace') && unicodeStyles.monospace[char]) {
-                        formattedChar = unicodeStyles.monospace[char];
+                    // Check for digit emoji sequences (e.g., 1️⃣)
+                    const isDigitEmoji = /\d/.test(char) && line[charIdx + 1] === '\uFE0F' && line[charIdx + 2] === '\u20E3';
+                    
+                    // Skip emoji conversion - preserve emojis and digit emojis as-is
+                    if (!isEmoji(char) && !isDigitEmoji) {
+                        // Apply formats only to non-emoji characters
+                        if (formats.includes('bold') && unicodeStyles.bold[char]) {
+                            formattedChar = unicodeStyles.bold[char];
+                        } else if (formats.includes('italic') && unicodeStyles.italic[char]) {
+                            formattedChar = unicodeStyles.italic[char];
+                        } else if (formats.includes('monospace') && unicodeStyles.monospace[char]) {
+                            formattedChar = unicodeStyles.monospace[char];
+                        }
                     }
                     
                     formattedLine += formattedChar;
@@ -210,30 +330,52 @@ function convertHtmlToUnicode(html, plainText) {
     };
 }
 
+// Helper function to apply formatting while preserving emoji sequences
+function applyFormattingPreservingEmoji(content, styleMap) {
+    let result = '';
+    for (let i = 0; i < content.length; i++) {
+        const char = content[i];
+        
+        // Check for digit emoji sequences (e.g., 1️⃣ = digit + FE0F + 20E3)
+        if (/\d/.test(char) && content[i + 1] === '\uFE0F' && content[i + 2] === '\u20E3') {
+            // Skip emoji sequence - append all 3 characters as-is
+            result += char + '\uFE0F' + '\u20E3';
+            i += 2;
+        } else if (isEmoji(char)) {
+            // Skip other emojis
+            result += char;
+        } else {
+            // Apply formatting
+            result += styleMap[char] || char;
+        }
+    }
+    return result;
+}
+
 // Convert markdown formatting to Unicode
 function convertMarkdownToUnicode(text) {
     // Convert `code` to Unicode monospace (before bold/italic to avoid conflicts)
     text = text.replace(/`([^`]+?)`/g, function(match, content) {
-        return Array.from(content).map(char => unicodeStyles.monospace[char] || char).join('');
+        return applyFormattingPreservingEmoji(content, unicodeStyles.monospace);
     });
     // Convert **bold** to Unicode bold
     text = text.replace(/\*\*([^\*]+?)\*\*/g, function(match, content) {
-        return Array.from(content).map(char => unicodeStyles.bold[char] || char).join('');
+        return applyFormattingPreservingEmoji(content, unicodeStyles.bold);
     });
     
     // Convert __bold__ to Unicode bold
     text = text.replace(/__([^_]+?)__/g, function(match, content) {
-        return Array.from(content).map(char => unicodeStyles.bold[char] || char).join('');
+        return applyFormattingPreservingEmoji(content, unicodeStyles.bold);
     });
     
     // Convert *italic* to Unicode italic (single asterisk)
     text = text.replace(/\*([^\*]+?)\*/g, function(match, content) {
-        return Array.from(content).map(char => unicodeStyles.italic[char] || char).join('');
+        return applyFormattingPreservingEmoji(content, unicodeStyles.italic);
     });
     
     // Convert _italic_ to Unicode italic (single underscore)
     text = text.replace(/_([^_]+?)_/g, function(match, content) {
-        return Array.from(content).map(char => unicodeStyles.italic[char] || char).join('');
+        return applyFormattingPreservingEmoji(content, unicodeStyles.italic);
     });
     
     return text;
@@ -403,10 +545,18 @@ function initializeUndoSystem() {
         
         // If HTML content exists, try to extract formatting
         if (htmlContent) {
-            const result = convertHtmlToUnicode(htmlContent, pastedText);
-            if (result.hasFormatting) {
-                convertedText = result.text;
+            // First, try to process for bold section spacing
+            const hasConsecutiveBold = /<(b|strong).*?<(b|strong|p|div)/i.test(htmlContent);
+            if (hasConsecutiveBold) {
+                convertedText = processHtmlForSpacing(htmlContent, pastedText);
                 hasFormatting = true;
+            } else {
+                // Use regular conversion for other formatting
+                const result = convertHtmlToUnicode(htmlContent, pastedText);
+                if (result.hasFormatting) {
+                    convertedText = result.text;
+                    hasFormatting = true;
+                }
             }
         }
         
@@ -527,10 +677,24 @@ function formatText(style) {
     let formattedText = '';
     
     if (style === 'bold' || style === 'italic' || style === 'monospace' || style === 'script' || style === 'fraktur' || style === 'doublestrike') {
-        // Use Array.from() to handle surrogate pairs properly
-        formattedText = Array.from(selectedText).map(char => {
-            return unicodeStyles[style][char] || char;
-        }).join('');
+        // Process text character by character, detecting and preserving emoji sequences
+        formattedText = '';
+        for (let i = 0; i < selectedText.length; i++) {
+            const char = selectedText[i];
+            
+            // Check for digit emoji sequences (e.g., 1️⃣ = digit + FE0F + 20E3)
+            if (/\d/.test(char) && selectedText[i + 1] === '\uFE0F' && selectedText[i + 2] === '\u20E3') {
+                // Skip emoji sequence - append all 3 characters as-is
+                formattedText += char + '\uFE0F' + '\u20E3';
+                i += 2;
+            } else if (isEmoji(char)) {
+                // Skip other emojis
+                formattedText += char;
+            } else {
+                // Apply formatting to non-emoji characters
+                formattedText += unicodeStyles[style][char] || char;
+            }
+        }
     } else if (style === 'underline') {
         // Use Array.from() to handle surrogate pairs properly
         formattedText = Array.from(selectedText).map(char => char + '\u0332').join('');
@@ -703,18 +867,18 @@ function addHeader(level) {
     let formattedText = '';
     
     if (level === 'h1') {
-        formattedText = `━━━━━━━━━━━━━━━━━━━━\n${boldText.toUpperCase()}\n━━━━━━━━━━━━━━━━━━━━`;
+        formattedText = `━━━━━━━━━━━━━━━━━━━━\n${boldText.toUpperCase()}\n━━━━━━━━━━━━━━━━━━━━\n`;
     } else if (level === 'h2') {
-        formattedText = `▸ ${boldText.toUpperCase()}`;
+        formattedText = `▸ ${boldText.toUpperCase()}\n`;
     } else if (level === 'h3') {
-        formattedText = `◉ ${boldText}`;
+        formattedText = `◉ ${boldText}\n`;
     }
     
     if (selectedText) {
         const newText = editor.value.substring(0, start) + formattedText + editor.value.substring(end);
         editor.value = newText;
     } else {
-        insertAtCursor(editor, formattedText + '\n\n');
+        insertAtCursor(editor, formattedText + '\n');
     }
     saveState();
     
