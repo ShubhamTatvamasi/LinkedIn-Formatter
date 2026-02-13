@@ -1210,6 +1210,8 @@ window.onclick = function(event) {
 
 // Keyboard shortcuts
 document.addEventListener('keydown', function(e) {
+    const editor = document.getElementById('editor');
+    
     // Ctrl/Cmd + Z for undo
     if ((e.ctrlKey || e.metaKey) && e.code === 'KeyZ' && !e.shiftKey) {
         e.preventDefault();
@@ -1226,18 +1228,21 @@ document.addEventListener('keydown', function(e) {
     // Ctrl/Cmd + B for bold
     if ((e.ctrlKey || e.metaKey) && e.code === 'KeyB') {
         e.preventDefault();
+        editor.focus();
         formatText('bold');
     }
     
     // Ctrl/Cmd + I for italic
     if ((e.ctrlKey || e.metaKey) && e.code === 'KeyI') {
         e.preventDefault();
+        editor.focus();
         formatText('italic');
     }
     
     // Ctrl/Cmd + U for underline
     if ((e.ctrlKey || e.metaKey) && e.code === 'KeyU') {
         e.preventDefault();
+        editor.focus();
         formatText('underline');
     }
 });
