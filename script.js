@@ -1250,6 +1250,7 @@ saveState();
     }
     
     editor.value = template;
+    autoResizeEditor();
     saveState();
     updatePreview();
     showToast('Template loaded!', 'success');
