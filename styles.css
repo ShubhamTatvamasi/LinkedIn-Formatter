@@ -251,8 +251,9 @@ body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     font-size: 1rem;
     line-height: 1.6;
-    resize: vertical;
-    transition: var(--transition);
+    resize: none;
+    overflow: hidden;
+    transition: height 0.15s ease;
     /* Ensure Unicode characters render properly */
     font-feature-settings: normal;
     font-variant-ligatures: normal;

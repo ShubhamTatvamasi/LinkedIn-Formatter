@@ -447,6 +447,21 @@ let currentState = '';
 let isUndoRedo = false;
 
 // Initialize on load
+// Auto-grow editor with content
+function autoResizeEditor() {
+    const editor = document.getElementById('editor');
+    if (!editor) return;
+    
+    // Reset height to auto to calculate scrollHeight properly
+    editor.style.height = 'auto';
+    
+    // Get the scrollHeight which is the full content height
+    const scrollHeight = editor.scrollHeight;
+    
+    // Set height to scrollHeight for full content display
+    editor.style.height = scrollHeight + 'px';
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     updatePreview();
     initializeEmojiSystem(); // Initialize emoji-js system
@@ -463,6 +478,9 @@ function initializeUndoSystem() {
     // Track manual typing and paste
     let typingTimer;
     editor.addEventListener('input', function(e) {
+        // Auto-resize editor to fit content
+        autoResizeEditor();
+        
         // Always update preview
         updatePreview();
         
@@ -475,6 +493,14 @@ function initializeUndoSystem() {
         typingTimer = setTimeout(() => {
             saveState();
         }, 500); // Save state after 500ms of no typing
+    });
+    
+    // Initial resize
+    autoResizeEditor();
+    
+    // Handle window resize to update editor max-height
+    window.addEventListener('resize', function() {
+        autoResizeEditor();
     });
     
     // Handle paste events with smart formatting detection
@@ -559,6 +585,9 @@ function initializeUndoSystem() {
         editor.value = before + convertedText + after;
         editor.selectionStart = editor.selectionEnd = start + convertedText.length;
         
+        // Auto-resize editor after paste
+        autoResizeEditor();
+        
         // Show notification if formatting was converted
         if (hasFormatting) {
             showToast('✨ Formatting converted to Unicode!', 'success');
@@ -614,6 +643,7 @@ function undo() {
         
         isUndoRedo = true;
         editor.value = currentState;
+        autoResizeEditor();
         updatePreview();
         showToast('↶ Undone', 'info');
     } else {
@@ -631,6 +661,7 @@ function redo() {
         
         isUndoRedo = true;
         editor.value = currentState;
+        autoResizeEditor();
         updatePreview();
         showToast('↷ Redone', 'info');
     } else {
@@ -683,6 +714,7 @@ function formatText(style) {
     editor.value = newText;
     editor.setSelectionRange(start, start + formattedText.length);
     editor.focus();
+    autoResizeEditor();
     saveState();
     updatePreview();
     
@@ -753,6 +785,7 @@ function changeCase(caseType) {
     editor.value = fullText;
     editor.setSelectionRange(start, start + newText.length);
     editor.focus();
+    autoResizeEditor();
     saveState();
     updatePreview();
     showToast(`✓ Case changed to ${caseType}`, 'success');
@@ -788,6 +821,7 @@ function clearFormatting() {
     editor.value = fullText;
     editor.setSelectionRange(start, start + cleanText.length);
     editor.focus();
+    autoResizeEditor();
     saveState();
     updatePreview();
     showToast('✓ Formatting cleared', 'success');
@@ -823,6 +857,7 @@ function addList(type) {
         insertAtCursor(editor, formattedText);
     }
     
+    autoResizeEditor();
     saveState();
     editor.focus();
     updatePreview();
@@ -856,6 +891,7 @@ function addHeader(level) {
     } else {
         insertAtCursor(editor, formattedText + '\n');
     }
+    autoResizeEditor();
     saveState();
     
     editor.focus();
@@ -876,6 +912,7 @@ function addDivider(type = 'line1') {
     saveState();
     const divider = dividers[type] || dividers['line1'];
     insertAtCursor(editor, divider);
+    autoResizeEditor();
     updatePreview();
 }
 
@@ -897,6 +934,7 @@ function addQuote() {
     saveState();
     }
     
+    autoResizeEditor();
     editor.focus();
     updatePreview();
 }
@@ -1050,6 +1088,7 @@ function clearEditor() {
 // Confirm and clear editor
 function confirmClearEditor() {
     document.getElementById('editor').value = '';
+    autoResizeEditor();
     updatePreview();
     closeConfirmationModal();
     showToast('Editor cleared', 'info');
