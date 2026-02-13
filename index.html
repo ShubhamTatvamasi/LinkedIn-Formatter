@@ -7,6 +7,8 @@
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 448 512'%3E%3Cpath fill='%230a66c2' d='M100.28 448H7.4V148.9h92.88zM53.79 108.1C24.09 108.1 0 83.5 0 53.8a53.79 53.79 0 0 1 107.58 0c0 29.7-24.1 54.3-53.79 54.3zM447.9 448h-92.68V302.4c0-34.7-.7-79.2-48.29-79.2-48.29 0-55.69 37.7-55.69 76.7V448h-92.78V148.9h89.08v40.8h1.3c12.4-23.5 42.69-48.3 87.88-48.3 94 0 111.28 61.9 111.28 142.3V448z'/%3E%3C/svg%3E">
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Emoji-js library for comprehensive emoji support -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/emoji-js/3.8.1/emoji.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -180,24 +182,26 @@
 
             <!-- Emoji Picker Modal -->
             <div id="emojiModal" class="modal">
-                <div class="modal-content">
+                <div class="modal-content emoji-modal">
                     <div class="modal-header">
                         <h3>Select Emoji</h3>
                         <button class="close-modal" onclick="closeEmojiModal()">&times;</button>
                     </div>
-                    <div class="emoji-categories">
-                        <button class="emoji-cat-btn active" onclick="showEmojiCategory('popular')">Popular</button>
-                        <button class="emoji-cat-btn" onclick="showEmojiCategory('smileys')">Smileys</button>
-                        <button class="emoji-cat-btn" onclick="showEmojiCategory('gestures')">Gestures</button>
-                        <button class="emoji-cat-btn" onclick="showEmojiCategory('animals')">Animals</button>
-                        <button class="emoji-cat-btn" onclick="showEmojiCategory('food')">Food</button>
-                        <button class="emoji-cat-btn" onclick="showEmojiCategory('travel')">Travel</button>
-                        <button class="emoji-cat-btn" onclick="showEmojiCategory('nature')">Nature</button>
-                        <button class="emoji-cat-btn" onclick="showEmojiCategory('objects')">Objects</button>
-                        <button class="emoji-cat-btn" onclick="showEmojiCategory('symbols')">Symbols</button>
-                        <button class="emoji-cat-btn" onclick="showEmojiCategory('flag')">Flags</button>
-                        <button class="emoji-cat-btn" onclick="showEmojiCategory('business')">Business</button>
-                        <button class="emoji-cat-btn" onclick="showEmojiCategory('time')">Time</button>
+                    <div class="emoji-categories-wrapper">
+                        <div class="emoji-categories">
+                            <button class="emoji-cat-btn active" onclick="showEmojiCategory('popular')">Popular</button>
+                            <button class="emoji-cat-btn" onclick="showEmojiCategory('smileys')">Smileys</button>
+                            <button class="emoji-cat-btn" onclick="showEmojiCategory('gestures')">Gestures</button>
+                            <button class="emoji-cat-btn" onclick="showEmojiCategory('animals')">Animals</button>
+                            <button class="emoji-cat-btn" onclick="showEmojiCategory('food')">Food</button>
+                            <button class="emoji-cat-btn" onclick="showEmojiCategory('travel')">Travel</button>
+                            <button class="emoji-cat-btn" onclick="showEmojiCategory('nature')">Nature</button>
+                            <button class="emoji-cat-btn" onclick="showEmojiCategory('objects')">Objects</button>
+                            <button class="emoji-cat-btn" onclick="showEmojiCategory('symbols')">Symbols</button>
+                            <button class="emoji-cat-btn" onclick="showEmojiCategory('flag')">Flags</button>
+                            <button class="emoji-cat-btn" onclick="showEmojiCategory('business')">Business</button>
+                            <button class="emoji-cat-btn" onclick="showEmojiCategory('time')">Time</button>
+                        </div>
                     </div>
                     <div id="emojiGrid" class="emoji-grid"></div>
                 </div>
