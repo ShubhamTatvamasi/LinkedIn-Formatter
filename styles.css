@@ -382,19 +382,43 @@ body {
     height: 100%;
     background: rgba(0, 0, 0, 0.5);
     z-index: 1000;
-    animation: fadeIn 0.3s ease;
+    animation: modalFadeIn 0.3s ease;
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
 }
 
 .modal-content {
     background: var(--surface-color);
     max-width: 600px;
-    margin: 50px auto;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-lg);
     max-height: 80vh;
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    animation: modalContentFadeIn 0.3s ease;
+}
+
+@keyframes modalContentFadeIn {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
 }
 
 .modal-content.emoji-modal {
@@ -431,6 +455,64 @@ body {
 
 .close-modal:hover {
     transform: rotate(90deg);
+}
+
+/* Confirmation Modal */
+.modal-content.confirmation-modal {
+    max-width: 400px;
+}
+
+.modal-body {
+    padding: 20px;
+    text-align: center;
+    flex-grow: 1;
+}
+
+.modal-body p {
+    font-size: 1.05rem;
+    color: var(--text-primary);
+}
+
+.modal-footer {
+    display: flex;
+    gap: 12px;
+    padding: 20px;
+    background: #f9f9f9;
+    border-top: 1px solid var(--border-color);
+    flex-shrink: 0;
+    justify-content: flex-end;
+}
+
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 1rem;
+    cursor: pointer;
+    transition: var(--transition);
+    font-weight: 500;
+}
+
+.btn-secondary {
+    background: var(--border-color);
+    color: var(--text-primary);
+}
+
+.btn-secondary:hover {
+    background: #d0d0d0;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+}
+
+.btn-danger {
+    background: var(--danger-color);
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #a30a0d;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
 }
 
 .emoji-categories-wrapper {

@@ -903,12 +903,25 @@ saveState();
         
 // Clear editor
 function clearEditor() {
-    if (confirm('Are you sure you want to clear all content?')) {
-        document.getElementById('editor').value = '';
-        updatePreview();
-        showToast('Editor cleared', 'info');
-    }
+    const confirmationModal = document.getElementById('confirmationModal');
+    confirmationModal.style.display = 'block';
 }
+
+// Confirm and clear editor
+function confirmClearEditor() {
+    document.getElementById('editor').value = '';
+    updatePreview();
+    closeConfirmationModal();
+    showToast('Editor cleared', 'info');
+}
+
+// Close confirmation modal
+function closeConfirmationModal() {
+    const confirmationModal = document.getElementById('confirmationModal');
+    confirmationModal.style.display = 'none';
+}
+
+
 
 // Show toast notification
 function showToast(message, type = 'success') {
@@ -1065,9 +1078,15 @@ saveState();
 
 // Close modal when clicking outside
 window.onclick = function(event) {
-    const modal = document.getElementById('emojiModal');
-    if (event.target === modal) {
+    const emojiModal = document.getElementById('emojiModal');
+    const confirmationModal = document.getElementById('confirmationModal');
+    
+    if (event.target === emojiModal) {
         closeEmojiModal();
+    }
+    
+    if (event.target === confirmationModal) {
+        closeConfirmationModal();
     }
 }
 
