@@ -687,10 +687,10 @@ function addDivider(type = 'line1') {
     const editor = document.getElementById('editor');
     
     const dividers = {
-        'line1': '\n━━━━━━━━━━━━━━━━━━━━━━\n',
-        'line2': '\n──────────────────────\n',
+        'line1': '\n━━━━━━━━━━━━━━━━━━━━━\n',
+        'line2': '\n─────────────────────\n',
         'line3': '\n• • • • • • • • • • • • • • • • • • • • • • • • • • • • • • •\n',
-        'line4': '\n▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬\n'
+        'line4': '\n▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬\n'
     };
     
     saveState();
