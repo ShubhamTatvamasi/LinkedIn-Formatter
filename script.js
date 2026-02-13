@@ -50,6 +50,13 @@ function convertHtmlToUnicode(html, plainText) {
         };
     }
     
+    // Get list item texts FIRST (before modifying plainText)
+    let listItemTexts = [];
+    if (hasLists) {
+        const listItems = tempDiv.querySelectorAll('li');
+        listItemTexts = Array.from(listItems).map(li => li.textContent.trim());
+    }
+    
     // Build a map of text with formatting
     const formattingMap = new Map();
     
@@ -82,17 +89,6 @@ function convertHtmlToUnicode(html, plainText) {
                 hasFormatting = true;
             } else if (/^h[1-6]$/.test(tagName)) {
                 newFormats.push('bold');
-                hasFormatting = true;
-            } else if (tagName === 'li') {
-                // Add bullet before list item
-                formattingMap.set(formattingMap.size, {
-                    char: '•',
-                    formats: []
-                });
-                formattingMap.set(formattingMap.size, {
-                    char: ' ',
-                    formats: []
-                });
                 hasFormatting = true;
             }
             
@@ -137,22 +133,40 @@ function convertHtmlToUnicode(html, plainText) {
                     formattedLine += formattedChar;
                     mapIndex++;
                     break;
-                } else if (mapEntry.char === '•') {
-                    // List item marker, skip it in map but don't add to output
-                    mapIndex++;
-                    continue;
                 }
                 
                 mapIndex++;
             }
         }
         
+        // Now add bullet prefix if this line matches a list item
+        const trimmed = formattedLine.trim();
+        if (trimmed && listItemTexts.includes(trimmed)) {
+            formattedLine = '• ' + trimmed;
+        }
+        
         result.push(formattedLine || line);
     }
     
+    // Clean up excessive newlines - remove empty lines between bullets, keep one space between groups
+    let finalText = result.join('\n');
+    
+    // Remove lines that are just empty between bullets
+    const bulletLines = finalText.split('\n').map((line, idx, arr) => {
+        // If this is empty and both prev/next are bullets, skip it
+        if (line.trim() === '' && 
+            ((idx > 0 && arr[idx - 1].trim().startsWith('•')) || idx === 0) &&
+            ((idx < arr.length - 1 && arr[idx + 1].trim().startsWith('•')) || idx === arr.length - 1)) {
+            return null;
+        }
+        return line;
+    }).filter(line => line !== null);
+    
+    finalText = bulletLines.join('\n').replace(/\n{3,}/g, '\n\n');
+    
     return {
-        text: result.join('\n'),
-        hasFormatting: hasFormatting
+        text: finalText,
+        hasFormatting: hasFormatting || listItemTexts.length > 0
     };
 }
 
@@ -186,13 +200,104 @@ function convertMarkdownToUnicode(text) {
 }
 
 // Emoji collections
-const emojiCollection = {
+// Emoji collection - will be populated from CDN
+let emojiCollection = {
     popular: ['😊', '👍', '🎉', '💡', '🚀', '✨', '💪', '🔥', '❤️', '👏', '🌟', '💯', '🎯', '📈', '💼', '🏆', '✅', '👋', '🙌', '💬'],
     smileys: ['😀', '😃', '😄', '😁', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋'],
     gestures: ['👍', '👎', '👏', '🙌', '👐', '🤲', '🤝', '🙏', '✍️', '💪', '🦾', '🤳', '👋', '🤚', '🖐️', '✋', '🖖', '👌', '🤌', '🤏'],
-    objects: ['💼', '📊', '📈', '📉', '💻', '⌨️', '🖥️', '📱', '📲', '💾', '💿', '📀', '🖱️', '🖨️', '⌚', '📞', '☎️', '📟', '📠', '📺'],
-    symbols: ['✅', '✔️', '☑️', '✖️', '❌', '❎', '➕', '➖', '➗', '✳️', '✴️', '❇️', '‼️', '⁉️', '❓', '❔', '❕', '❗', '〰️', '💯']
+    animals: ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐽', '🐸', '🐵', '🙈', '🙉', '🙊', '🐒', '🐔', '🐧', '🐦', '🐤', '🦆', '🦅', '🦉', '🦇', '🐺', '🐗', '🐴', '🦄', '🐝', '🐛', '🦋'],
+    food: ['🍏', '🍎', '🍐', '🍊', '🍋', '🍌', '🍉', '🍇', '🍓', '🍈', '🍒', '🍑', '🍍', '🥝', '🍅', '🍆', '🥑', '🥦', '🥬', '🥒', '🌶️', '🌽', '🥕', '🥔', '🍠', '🥐', '🍞', '🥖', '🧀', '🥚', '🍳', '🥞', '🥓', '🥩', '🍗', '🌭', '🍔', '🍟', '🍕', '🥪', '🌮', '🌯', '🥗', '🍝', '🍜', '🍖', '🍱', '🍣', '🍤'],
+    travel: ['✈️', '🚁', '🚂', '🚃', '🚄', '🚅', '🚆', '🚇', '🚈', '🚉', '🚊', '🚝', '🚞', '🚋', '🚌', '🚍', '🚎', '🚐', '🚑', '🚒', '🚓', '🚔', '🚕', '🚖', '🚗', '🚘', '🚙', '🚚', '🚛', '🚜', '🏎️', '🏍️', '🛵', '🛴', '🚲', '🛹', '⛵', '🚤', '🛳️', '⛴️', '🛥️', '🚨', '🚧', '🚦', '🚥'],
+    nature: ['🌋', '⛰️', '🌄', '🌅', '🌆', '🌇', '🌉', '🌁', '⛅', '🌤️', '🌥️', '☁️', '🌦️', '🌧️', '⛈️', '🌩️', '🌨️', '❄️', '☃️', '⛄', '💨', '💧', '💦', '☔', '⚡', '🌪️', '🌫️', '🌈', '☀️', '⭐', '🌟', '✨'],
+    objects: ['💼', '📊', '📈', '📉', '💻', '⌨️', '🖥️', '📱', '📲', '💾', '💿', '📀', '🖱️', '🖨️', '⚽', '⚾', '🎾', '🏀', '🎮', '🎯', '🎪', '🎨', '🎬', '🎤', '🎧', '🎼', '🎹', '🥁', '🎷', '🎺', '🎸'],
+    symbols: ['✅', '✔️', '☑️', '✖️', '❌', '❎', '➕', '➖', '➗', '✳️', '✴️', '❇️', '‼️', '⁉️', '❓', '❔', '❕', '❗', '〰️', '💯', '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '💔', '💕', '💞', '💓', '💗', '💖', '💘', '💝'],
+    flag: ['🏁', '🚩', '🎌', '🏴', '🏳️', '🏳️‍🌈', '🏴‍☠️', '🇺🇸', '🇬🇧', '🇨🇦', '🇦🇺', '🇮🇳', '🇯🇵', '🇩🇪', '🇫🇷', '🇪🇸', '🇮🇹', '🇧🇷', '🇨🇳', '🇮🇩', '🇿🇦', '🇧🇩', '🇰🇷', '🇮🇷', '🇦🇫'],
+    business: ['💼', '📊', '📈', '📉', '📋', '📁', '📂', '📃', '📄', '📑', '📰', '🗂️', '🗳️', '✂️', '✒️', '🖋️', '🖊️', '🖌️', '📝', '✏️', '🔍', '🔎', '🔏', '🔐', '🔒', '📌', '📍', '📎', '🖇️', '📏', '📐', '📞', '☎️', '📟', '📠', '💬', '📢', '📣', '📯', '🔔', '🔕'],
+    time: ['⏰', '⏱️', '⏲️', '🕰️', '⌚', '⌛', '⏳', '📡', '🔋', '🔌', '💡', '🔦', '📔', '📕', '📖', '📗', '📘', '📙', '📚', '📓', '📒', '🧷', '📰', '🗞️']
 };
+
+// Load emojis from CDN and organize by category
+async function loadEmojiPack() {
+    try {
+        const response = await fetch('https://cdn.jsdelivr.net/npm/emojibase-data@latest/en/data.json');
+        const emojiData = await response.json();
+        
+        // Organize emojis by group
+        const grouped = {
+            smileys: [],
+            gestures: [],
+            animals: [],
+            food: [],
+            travel: [],
+            nature: [],
+            objects: [],
+            symbols: [],
+            flag: [],
+            business: [],
+            popular: []
+        };
+        
+        // Categorize emojis based on their group
+        emojiData.forEach(emoji => {
+            const char = emoji.emoji;
+            if (!char) return;
+            
+            switch(emoji.group) {
+                case 'smileys-emotion':
+                    if (grouped.smileys.length < 50) grouped.smileys.push(char);
+                    break;
+                case 'people':
+                    if (grouped.gestures.length < 50) grouped.gestures.push(char);
+                    break;
+                case 'animals-nature':
+                    if (grouped.animals.length < 50) grouped.animals.push(char);
+                    break;
+                case 'food-drink':
+                    if (grouped.food.length < 50) grouped.food.push(char);
+                    break;
+                case 'travel-places':
+                    if (grouped.travel.length < 50) grouped.travel.push(char);
+                    break;
+                case 'objects':
+                    if (grouped.objects.length < 50) grouped.objects.push(char);
+                    break;
+                case 'symbols':
+                    if (grouped.symbols.length < 50) grouped.symbols.push(char);
+                    break;
+                case 'flags':
+                    if (grouped.flag.length < 50) grouped.flag.push(char);
+                    break;
+            }
+        });
+        
+        // Add business category (from objects)
+        grouped.business = grouped.objects.slice(0, 50);
+        
+        // Add popular emojis from top ones
+        grouped.popular = emojiData.slice(0, 50).map(e => e.emoji).filter(e => e);
+        
+        // Update global emojiCollection with loaded data, keeping fallbacks if empty
+        emojiCollection = {
+            popular: grouped.popular.length > 0 ? grouped.popular : emojiCollection.popular,
+            smileys: grouped.smileys.length > 0 ? grouped.smileys : emojiCollection.smileys,
+            gestures: grouped.gestures.length > 0 ? grouped.gestures : emojiCollection.gestures,
+            animals: grouped.animals.length > 0 ? grouped.animals : emojiCollection.animals,
+            food: grouped.food.length > 0 ? grouped.food : emojiCollection.food,
+            travel: grouped.travel.length > 0 ? grouped.travel : emojiCollection.travel,
+            nature: grouped.nature.length > 0 ? grouped.nature : emojiCollection.nature,
+            objects: grouped.objects.length > 0 ? grouped.objects : emojiCollection.objects,
+            symbols: grouped.symbols.length > 0 ? grouped.symbols : emojiCollection.symbols,
+            flag: grouped.flag.length > 0 ? grouped.flag : emojiCollection.flag,
+            business: grouped.business.length > 0 ? grouped.business : emojiCollection.business,
+            time: emojiCollection.time
+        };
+        
+        // Refresh emoji grid if already initialized
+        setupEmojiGrid();
+    } catch (error) {
+        console.log('Using fallback emoji collection. CDN load error:', error);
+    }
+}
 
 // Undo/Redo system
 let undoStack = [];
@@ -205,6 +310,7 @@ document.addEventListener('DOMContentLoaded', function() {
     updatePreview();
     setupEmojiGrid();
     initializeUndoSystem();
+    loadEmojiPack(); // Load comprehensive emoji pack from CDN
 });
 
 // Initialize undo system
@@ -249,13 +355,33 @@ function initializeUndoSystem() {
         let convertedText = pastedText;
         let hasFormatting = false;
         
-        // If HTML content exists, extract and convert formatting while preserving original text structure
+        // First check if plain text has bullet points
+        const bulletPattern = /^[\s]*([-•*])\s+/m;
+        const hasBullets = bulletPattern.test(pastedText);
+        
+        // If HTML content exists, try to extract formatting
         if (htmlContent) {
             const result = convertHtmlToUnicode(htmlContent, pastedText);
             if (result.hasFormatting) {
                 convertedText = result.text;
                 hasFormatting = true;
             }
+        }
+        
+        // If bullets detected in plain text and no other formatting was found, convert them
+        if (!hasFormatting && hasBullets) {
+            // Convert various bullet formats to consistent bullet point character
+            let normalized = pastedText.replace(/\r\n/g, '\n');
+            normalized = normalized.replace(/\n{3,}/g, '\n\n');
+            
+            convertedText = normalized.split('\n').map(line => {
+                const match = line.match(/^(\s*)([-•*])\s+(.*)$/);
+                if (match) {
+                    return '• ' + match[3].trim();
+                }
+                return line;
+            }).join('\n');
+            hasFormatting = true;
         }
         
         // If no HTML formatting found, check for markdown
