@@ -105,16 +105,23 @@ function convertHtmlToUnicode(html, plainText) {
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = html;
     
-    // Check if there's any actual formatting (excluding bold/italic which are common in pasted content)
+    // Check if there's any actual formatting
     const hasHeaders = /<h[1-6][^>]*>/i.test(html);
     const hasLists = /<(ul|ol|li)[^>]*>/i.test(html);
+    const hasCode = /<code[^>]*>/i.test(html);
+    const hasBoldOrItalic = /<(b|strong|i|em)[^>]*>/i.test(html);
     
-    if (!hasHeaders && !hasLists) {
-        // No meaningful formatting found, return plain text as-is (skip bold/italic conversion)
+    if (!hasHeaders && !hasLists && !hasCode && !hasBoldOrItalic) {
+        // No meaningful formatting found, return plain text as-is
         return {
             text: plainText,
             hasFormatting: false
         };
+    }
+    
+    // If we have any HTML formatting tags, we have formatting
+    if (hasBoldOrItalic || hasCode) {
+        hasFormatting = true;
     }
     
     // Get list item texts FIRST (before modifying plainText)
@@ -146,17 +153,15 @@ function convertHtmlToUnicode(html, plainText) {
             const newFormats = [...formats];
             
             if (tagName === 'b' || tagName === 'strong') {
-                // Skip bold formatting from pasted content
-                // Users can manually apply bold using the toolbar button
+                // Keep track of bold formatting
+                newFormats.push('bold');
             } else if (tagName === 'i' || tagName === 'em') {
-                // Skip italic formatting from pasted content
-                // Users can manually apply italic using the toolbar button
+                // Keep track of italic formatting
+                newFormats.push('italic');
             } else if (tagName === 'code') {
                 newFormats.push('monospace');
-                hasFormatting = true;
             } else if (/^h[1-6]$/.test(tagName)) {
                 newFormats.push('bold');
-                hasFormatting = true;
             }
             
             for (let child of node.childNodes) {
@@ -505,17 +510,6 @@ function initializeUndoSystem() {
         const bulletPattern = /^[\s]*([-•*])\s+/m;
         const hasBullets = bulletPattern.test(pastedText);
         
-// Add spacing between consecutive headers (h1, h2, etc.)
-function addSpacingForBoldLines(htmlContent, plainText) {
-    if (!htmlContent || !plainText) return plainText;
-    
-    // Check for multiple header tags
-    const hasHeaders = /<h[1-6][^>]*>/i.test(htmlContent);
-    if (!hasHeaders) return plainText;
-    
-    // Just return plainText as-is - spacing will be handled by convertHtmlToUnicode
-    return plainText;
-}
         if (htmlContent) {
             const result = convertHtmlToUnicode(htmlContent, pastedText);
             if (result.hasFormatting) {
@@ -547,6 +541,13 @@ function addSpacingForBoldLines(htmlContent, plainText) {
                 convertedText = convertMarkdownToUnicode(pastedText);
                 hasFormatting = convertedText !== pastedText;
             }
+        }
+        
+        // On Linux, also check if we detected HTML tags but converted nothing visible
+        // This handles cases where HTML exists but our converter didn't find "meaningful" changes
+        if (!hasFormatting && htmlContent) {
+            // If HTML was present, assume some formatting existed
+            hasFormatting = true;
         }
         
         // Insert at cursor position
