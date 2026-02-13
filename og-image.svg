@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
+  <!-- Background -->
+  <rect width="1200" height="630" fill="#f3f2ef"/>
+  
+  <!-- Gradient background -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0a66c2;stop-opacity:0.9" />
+      <stop offset="100%" style="stop-color:#004182;stop-opacity:0.9" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bgGradient)"/>
+  
+  <!-- Title -->
+  <text x="600" y="180" font-size="72" font-weight="bold" text-anchor="middle" fill="white" font-family="Arial, sans-serif">
+    LinkedIn Formatter
+  </text>
+  
+  <!-- Subtitle -->
+  <text x="600" y="260" font-size="40" text-anchor="middle" fill="#e8f0ff" font-family="Arial, sans-serif">
+    Professional Post Formatting Tool
+  </text>
+  
+  <!-- Features -->
+  <text x="600" y="340" font-size="32" text-anchor="middle" fill="white" font-family="Arial, sans-serif">
+    ✨ Bold • Italic • Emojis • Lists • Templates
+  </text>
+  
+  <text x="600" y="390" font-size="28" text-anchor="middle" fill="#e8f0ff" font-family="Arial, sans-serif">
+    🚀 Smart Paste • Real-time Preview • Undo/Redo
+  </text>
+  
+  <!-- CTA -->
+  <text x="600" y="480" font-size="36" text-anchor="middle" fill="#00ff88" font-family="Arial, sans-serif" font-weight="bold">
+    Format Your Posts Like a Pro
+  </text>
+  
+  <!-- Footer -->
+  <text x="600" y="560" font-size="20" text-anchor="middle" fill="#e8f0ff" font-family="Arial, sans-serif">
+    Free • No Sign Up • Works with ChatGPT, Word &amp; Google Docs
+  </text>
+  
+  <!-- Decorative elements -->
+  <circle cx="100" cy="100" r="40" fill="#00ff88" opacity="0.2"/>
+  <circle cx="1100" cy="530" r="60" fill="#00ff88" opacity="0.1"/>
+  <rect x="1050" y="50" width="80" height="80" fill="#378fe9" opacity="0.2"/>
+</svg>
