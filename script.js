@@ -128,7 +128,16 @@ function convertHtmlToUnicode(html, plainText) {
     let listItemTexts = [];
     if (hasLists) {
         const listItems = tempDiv.querySelectorAll('li');
-        listItemTexts = Array.from(listItems).map(li => li.textContent.trim());
+        // Normalize list item text (convert smart quotes, NBSP, remove zero-widths) so it matches normalized plain-text
+        listItemTexts = Array.from(listItems).map(li => {
+            const raw = li.textContent || '';
+            return raw
+                .replace(/[\u200B\u200C\u200D\uFEFF\u2060]/g, '')
+                .replace(/\u00A0/g, ' ')
+                .replace(/[\u2018\u2019\u201A\u201B]/g, "'")
+                .replace(/[\u201C\u201D\u201E\u201F]/g, '"')
+                .trim();
+        });
     }
     
     // Build a map of text with formatting
@@ -136,7 +145,14 @@ function convertHtmlToUnicode(html, plainText) {
     
     function buildFormattingMap(node, formats = []) {
         if (node.nodeType === Node.TEXT_NODE) {
-            const text = node.textContent;
+            const raw = node.textContent || '';
+            // Normalize node text so it matches the normalized plain-text used elsewhere
+            // (preserve whitespace/newlines but remove zero-widths, convert NBSP, and normalize smart quotes)
+            const text = raw
+                .replace(/[\u200B\u200C\u200D\uFEFF\u2060]/g, '')
+                .replace(/\u00A0/g, ' ')
+                .replace(/[\u2018\u2019\u201A\u201B]/g, "'")
+                .replace(/[\u201C\u201D\u201E\u201F]/g, '"');
             if (text) {
                 for (let i = 0; i < text.length; i++) {
                     formattingMap.set(formattingMap.size, {
@@ -245,8 +261,16 @@ function convertHtmlToUnicode(html, plainText) {
     // Add spacing between consecutive headers (for pasted content with multiple headers)
     const headerElements = tempDiv.querySelectorAll('h1, h2, h3, h4, h5, h6');
     if (headerElements.length >= 2) {
-        // Get header texts in order
-        const headerTexts = Array.from(headerElements).map(h => h.textContent.trim());
+        // Get header texts in order and normalize them so smart quotes / NBSP don't cause mismatches
+        const headerTexts = Array.from(headerElements).map(h => {
+            const raw = h.textContent || '';
+            return raw
+                .replace(/[\u200B\u200C\u200D\uFEFF\u2060]/g, '')
+                .replace(/\u00A0/g, ' ')
+                .replace(/[\u2018\u2019\u201A\u201B]/g, "'")
+                .replace(/[\u201C\u201D\u201E\u201F]/g, '"')
+                .trim();
+        });
         
         // Add newline between consecutive headers in finalText
         const lines = finalText.split('\n');
