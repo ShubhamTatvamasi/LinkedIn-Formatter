@@ -309,32 +309,98 @@ function applyFormattingPreservingEmoji(content, styleMap) {
     return result;
 }
 
-// Convert markdown formatting to Unicode
+// Normalize pasted plain-text (strip invisible characters, normalize spaces and quotes)
+function normalizePastedText(text = '') {
+    if (!text) return '';
+
+    // Remove common invisible / zero-width characters that break regex detection
+    text = text.replace(/[\u200B\u200C\u200D\uFEFF\u2060]/g, '');
+
+    // Normalize CRLF to LF
+    text = text.replace(/\r\n/g, '\n');
+
+    // Collapse multiple blank lines
+    text = text.replace(/\n{3,}/g, '\n\n');
+
+    // Convert non-breaking spaces to normal spaces
+    text = text.replace(/\u00A0/g, ' ');
+
+    // Replace smart quotes with straight quotes (helps markdown detection)
+    text = text.replace(/[\u2018\u2019\u201A\u201B]/g, "'");
+    text = text.replace(/[\u201C\u201D\u201E\u201F]/g, '"');
+
+    // Trim trailing/leading whitespace on each line
+    text = text.split('\n').map(l => l.replace(/[\t ]+$/g, '')).join('\n');
+
+    return text;
+}
+
+// Convert markdown formatting to Unicode (supports headers, lists, fenced code, inline code, bold, italic)
 function convertMarkdownToUnicode(text) {
-    // Convert `code` to Unicode monospace (before bold/italic to avoid conflicts)
+    if (!text) return text;
+
+    // Normalize input first to improve detection on mobile clipboard content
+    const original = text;
+    text = normalizePastedText(text);
+
+    // Convert fenced code blocks (``` ```)
+    text = text.replace(/```([\s\S]*?)```/g, function(match, content) {
+        // Preserve newlines inside code block and convert to monospace
+        const converted = applyFormattingPreservingEmoji(content, unicodeStyles.monospace);
+        return converted;
+    });
+
+    // Convert markdown headers (#, ##, ###)
+    text = text.replace(/^#{1}\s*(.+)$/gm, function(m, content) {
+        const boldText = Array.from(content.trim()).map(c => unicodeStyles.bold[c] || c).join('');
+        return `━━━━━━━━━━━━━━━━━━━━\n${boldText.toUpperCase()}\n━━━━━━━━━━━━━━━━━━━━`;
+    });
+    text = text.replace(/^#{2}\s*(.+)$/gm, function(m, content) {
+        const boldText = Array.from(content.trim()).map(c => unicodeStyles.bold[c] || c).join('');
+        return `▸ ${boldText.toUpperCase()}`;
+    });
+    text = text.replace(/^#{3}\s*(.+)$/gm, function(m, content) {
+        const boldText = Array.from(content.trim()).map(c => unicodeStyles.bold[c] || c).join('');
+        return `◉ ${boldText}`;
+    });
+
+    // Convert unordered lists (-, *, +) to bullet points
+    text = text.replace(/^[ \t]*([-+\*])\s+(.+)$/gm, function(m, p1, content) {
+        return '• ' + content.trim();
+    });
+
+    // Convert numbered lists (1. 2. ...) — preserve numbering
+    text = text.replace(/^[ \t]*(\d+)\.\s+(.+)$/gm, function(m, num, content) {
+        return `${num}. ${content.trim()}`;
+    });
+
+    // Convert inline `code` to monospace
     text = text.replace(/`([^`]+?)`/g, function(match, content) {
         return applyFormattingPreservingEmoji(content, unicodeStyles.monospace);
     });
-    // Convert **bold** to Unicode bold
+
+    // Convert strong/bold (**text** or __text__)
     text = text.replace(/\*\*([^\*]+?)\*\*/g, function(match, content) {
         return applyFormattingPreservingEmoji(content, unicodeStyles.bold);
     });
-    
-    // Convert __bold__ to Unicode bold
     text = text.replace(/__([^_]+?)__/g, function(match, content) {
         return applyFormattingPreservingEmoji(content, unicodeStyles.bold);
     });
-    
-    // Convert *italic* to Unicode italic (single asterisk)
-    text = text.replace(/\*([^\*]+?)\*/g, function(match, content) {
-        return applyFormattingPreservingEmoji(content, unicodeStyles.italic);
+
+    // Convert emphasis/italic (*text* or _text_)
+    // Avoid matching already-processed bold by using lookarounds
+    text = text.replace(/(^|\s)\*([^\*\n]+?)\*(?=\s|$)/g, function(m, pre, content) {
+        return pre + applyFormattingPreservingEmoji(content, unicodeStyles.italic);
     });
-    
-    // Convert _italic_ to Unicode italic (single underscore)
-    text = text.replace(/_([^_]+?)_/g, function(match, content) {
-        return applyFormattingPreservingEmoji(content, unicodeStyles.italic);
+    text = text.replace(/(^|\s)_([^_\n]+?)_(?=\s|$)/g, function(m, pre, content) {
+        return pre + applyFormattingPreservingEmoji(content, unicodeStyles.italic);
     });
-    
+
+    // If nothing changed after normalization + markdown pass, return original to avoid false positives
+    if (text === normalizePastedText(original)) {
+        return original;
+    }
+
     return text;
 }
 
@@ -529,17 +595,29 @@ function initializeUndoSystem() {
             }
         }
         
+        // Normalize plain-text early to handle mobile clipboard quirks (zero-width, smart quotes, nbsp)
+        pastedText = normalizePastedText(pastedText || '');
+
         let convertedText = pastedText || '';
         let hasFormatting = false;
         
-        // First check if plain text has bullet points
-        const bulletPattern = /^[\s]*([-•*])\s+/m;
+        // First check if plain text has bullet points or numbered lists
+        const bulletPattern = /^[\s]*([-•*+]|\d+\.)\s+/m;
         const hasBullets = bulletPattern.test(pastedText);
         
         if (htmlContent) {
             const result = convertHtmlToUnicode(htmlContent, pastedText);
             if (result.hasFormatting) {
                 convertedText = result.text;
+                hasFormatting = true;
+            }
+        }
+
+        // --- Enhanced markdown/header/list/code detection (helps mobile plain-text paste from ChatGPT app)
+        if (!hasFormatting && pastedText) {
+            const markdownConverted = convertMarkdownToUnicode(pastedText);
+            if (markdownConverted !== pastedText) {
+                convertedText = markdownConverted;
                 hasFormatting = true;
             }
         }
