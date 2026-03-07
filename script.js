@@ -108,9 +108,16 @@ function convertHtmlToUnicode(html, plainText) {
     // Check if there's any actual formatting
     const hasHeaders = /<h[1-6][^>]*>/i.test(html);
     const hasLists = /<(ul|ol|li)[^>]*>/i.test(html);
-    const hasCode = /<code[^>]*>/i.test(html);
-    const hasBoldOrItalic = /<(b|strong|i|em)[^>]*>/i.test(html);
-    
+
+    // code elements or preformatted text
+    const hasCode = /<code[^>]*>/i.test(html) || /<pre[^>]*>/i.test(html);
+
+    // semantic bold/italic plus ChatGPT-style styled spans
+    const hasSemanticBoldOrItalic = /<(b|strong|i|em)[^>]*>/i.test(html);
+    const hasSpanBold = /<span[^>]*style=["'][^"']*(font-weight:\s*(bold|[6-9]00))/i.test(html);
+    const hasSpanItalic = /<span[^>]*style=["'][^"']*font-style:\s*italic/i.test(html);
+    const hasBoldOrItalic = hasSemanticBoldOrItalic || hasSpanBold || hasSpanItalic;
+
     if (!hasHeaders && !hasLists && !hasCode && !hasBoldOrItalic) {
         // No meaningful formatting found, return plain text as-is
         return {
@@ -118,8 +125,8 @@ function convertHtmlToUnicode(html, plainText) {
             hasFormatting: false
         };
     }
-    
-    // If we have any HTML formatting tags, we have formatting
+
+    // If we have any HTML formatting tags or styled spans, we have formatting
     if (hasBoldOrItalic || hasCode) {
         hasFormatting = true;
     }
@@ -174,10 +181,22 @@ function convertHtmlToUnicode(html, plainText) {
             } else if (tagName === 'i' || tagName === 'em') {
                 // Keep track of italic formatting
                 newFormats.push('italic');
-            } else if (tagName === 'code') {
+            } else if (tagName === 'code' || tagName === 'pre') {
                 newFormats.push('monospace');
             } else if (/^h[1-6]$/.test(tagName)) {
                 newFormats.push('bold');
+            } else if (tagName === 'span') {
+                // look at inline style for ChatGPT copy button or similar
+                const style = node.getAttribute('style') || '';
+                if (/font-weight:\s*(bold|[6-9]00)/i.test(style)) {
+                    newFormats.push('bold');
+                }
+                if (/font-style:\s*italic/i.test(style)) {
+                    newFormats.push('italic');
+                }
+                if (/font-family:\s*[^;]*monospace/i.test(style)) {
+                    newFormats.push('monospace');
+                }
             }
             
             for (let child of node.childNodes) {
@@ -199,6 +218,7 @@ function convertHtmlToUnicode(html, plainText) {
         
         for (let charIdx = 0; charIdx < line.length; charIdx++) {
             const char = line[charIdx];
+            let matched = false;
             
             // Find matching char in formatting map
             while (mapIndex < formattingMap.size) {
@@ -206,6 +226,7 @@ function convertHtmlToUnicode(html, plainText) {
                 
                 // Skip whitespace-only differences
                 if (mapEntry.char === char || (char.match(/\s/) && mapEntry.char.match(/\s/))) {
+                    matched = true;
                     const formats = mapEntry.formats;
                     let formattedChar = char;
                     
@@ -230,6 +251,15 @@ function convertHtmlToUnicode(html, plainText) {
                 }
                 
                 mapIndex++;
+            }
+
+            // If we exhausted the formatting map without matching the character,
+            // something went wrong with alignment (common when plainText is
+            // unexpectedly short or contains extra newlines). Bail out and
+            // return the unmodified plain text to avoid dropping content.
+            if (!matched && mapIndex >= formattingMap.size) {
+                // rebuild text quickly and return
+                return { text: plainText, hasFormatting };
             }
         }
         
@@ -257,53 +287,59 @@ function convertHtmlToUnicode(html, plainText) {
     }).filter(line => line !== null);
     
     finalText = bulletLines.join('\n').replace(/\n{3,}/g, '\n\n');
-    
-    // Add spacing between consecutive headers (for pasted content with multiple headers)
-    const headerElements = tempDiv.querySelectorAll('h1, h2, h3, h4, h5, h6');
-    if (headerElements.length >= 2) {
-        // Get header texts in order and normalize them so smart quotes / NBSP don't cause mismatches
-        const headerTexts = Array.from(headerElements).map(h => {
-            const raw = h.textContent || '';
-            return raw
-                .replace(/[\u200B\u200C\u200D\uFEFF\u2060]/g, '')
-                .replace(/\u00A0/g, ' ')
-                .replace(/[\u2018\u2019\u201A\u201B]/g, "'")
-                .replace(/[\u201C\u201D\u201E\u201F]/g, '"')
-                .trim();
-        });
-        
-        // Add newline between consecutive headers in finalText
-        const lines = finalText.split('\n');
-        const spacedLines = [];
-        
-        for (let i = 0; i < lines.length; i++) {
-            const line = lines[i];
-            const trimmedLine = line.trim();
-            
-            // Convert formatted text back to plain for comparison
-            let plainLine = Array.from(trimmedLine).map(char => reverseUnicodeMap[char] || char).join('');
-            
-            // Check if this line matches any header text
-            const isHeader = headerTexts.includes(plainLine);
-            
-            // Check previous line
-            let prevIsHeader = false;
-            if (i > 0) {
-                const prevLine = lines[i - 1].trim();
-                let prevPlain = Array.from(prevLine).map(char => reverseUnicodeMap[char] || char).join('');
-                prevIsHeader = headerTexts.includes(prevPlain);
-            }
-            
-            // Add blank line between consecutive headers
-            if (prevIsHeader && isHeader && trimmedLine) {
-                spacedLines.push('');
-            }
-            
-            spacedLines.push(line);
-        }
-        
-        finalText = spacedLines.join('\n');
+
+    // If we've somehow stripped everything but the HTML contained text, fall
+    // back to a basic textContent dump so the user at least sees the words.
+    if ((!finalText || !finalText.trim()) && tempDiv.textContent && tempDiv.textContent.trim()) {
+        finalText = normalizePastedText(tempDiv.textContent);
     }
+    
+    // (removed header-spacing logic; it was inserting stray blank lines/headers)
+    // const headerElements = tempDiv.querySelectorAll('h1, h2, h3, h4, h5, h6');
+    // if (headerElements.length >= 2) {
+    //     // Get header texts in order and normalize them so smart quotes / NBSP don't cause mismatches
+    //     const headerTexts = Array.from(headerElements).map(h => {
+    //         const raw = h.textContent || '';
+    //         return raw
+    //             .replace(/[\u200B\u200C\u200D\uFEFF\u2060]/g, '')
+    //             .replace(/\u00A0/g, ' ')
+    //             .replace(/[\u2018\u2019\u201A\u201B]/g, "'")
+    //             .replace(/[\u201C\u201D\u201E\u201F]/g, '"')
+    //             .trim();
+    //     });
+    //     
+    //     // Add newline between consecutive headers in finalText
+    //     const lines = finalText.split('\n');
+    //     const spacedLines = [];
+    //     
+    //     for (let i = 0; i < lines.length; i++) {
+    //         const line = lines[i];
+    //         const trimmedLine = line.trim();
+    //         
+    //         // Convert formatted text back to plain for comparison
+    //         let plainLine = Array.from(trimmedLine).map(char => reverseUnicodeMap[char] || char).join('');
+    //         
+    //         // Check if this line matches any header text
+    //         const isHeader = headerTexts.includes(plainLine);
+    //         
+    //         // Check previous line
+    //         let prevIsHeader = false;
+    //         if (i > 0) {
+    //             const prevLine = lines[i - 1].trim();
+    //             let prevPlain = Array.from(prevLine).map(char => reverseUnicodeMap[char] || char).join('');
+    //             prevIsHeader = headerTexts.includes(prevPlain);
+    //         }
+    //         
+    //         // Add blank line between consecutive headers
+    //         if (prevIsHeader && isHeader && trimmedLine) {
+    //             spacedLines.push('');
+    //         }
+    //         
+    //         spacedLines.push(line);
+    //     }
+    //     
+    //     finalText = spacedLines.join('\n');
+    // }
     
     return {
         text: finalText,
@@ -375,18 +411,19 @@ function convertMarkdownToUnicode(text) {
     });
 
     // Convert markdown headers (#, ##, ###)
-    text = text.replace(/^#{1}\s*(.+)$/gm, function(m, content) {
-        const boldText = Array.from(content.trim()).map(c => unicodeStyles.bold[c] || c).join('');
-        return `━━━━━━━━━━━━━━━━━━━━\n${boldText.toUpperCase()}\n━━━━━━━━━━━━━━━━━━━━`;
-    });
-    text = text.replace(/^#{2}\s*(.+)$/gm, function(m, content) {
-        const boldText = Array.from(content.trim()).map(c => unicodeStyles.bold[c] || c).join('');
-        return `▸ ${boldText.toUpperCase()}`;
-    });
-    text = text.replace(/^#{3}\s*(.+)$/gm, function(m, content) {
-        const boldText = Array.from(content.trim()).map(c => unicodeStyles.bold[c] || c).join('');
-        return `◉ ${boldText}`;
-    });
+    // (disabled - headers were causing unwanted dynamic decorations)
+    // text = text.replace(/^#{1}\s*(.+)$/gm, function(m, content) {
+    //     const boldText = Array.from(content.trim()).map(c => unicodeStyles.bold[c] || c).join('');
+    //     return `━━━━━━━━━━━━━━━━━━━━\n${boldText.toUpperCase()}\n━━━━━━━━━━━━━━━━━━━━`;
+    // });
+    // text = text.replace(/^#{2}\s*(.+)$/gm, function(m, content) {
+    //     const boldText = Array.from(content.trim()).map(c => unicodeStyles.bold[c] || c).join('');
+    //     return `▸ ${boldText.toUpperCase()}`;
+    // });
+    // text = text.replace(/^#{3}\s*(.+)$/gm, function(m, content) {
+    //     const boldText = Array.from(content.trim()).map(c => unicodeStyles.bold[c] || c).join('');
+    //     return `◉ ${boldText}`;
+    // });
 
     // Convert unordered lists (-, *, +) to bullet points
     text = text.replace(/^[ \t]*([-+\*])\s+(.+)$/gm, function(m, p1, content) {
@@ -634,6 +671,21 @@ function initializeUndoSystem() {
             if (result.hasFormatting) {
                 convertedText = result.text;
                 hasFormatting = true;
+            }
+            // if formatting was reported but conversion returned nothing,
+            // fall back to whatever plain text we have.
+            if (hasFormatting && (!convertedText || !convertedText.trim())) {
+                convertedText = pastedText || '';
+            }
+            // Even if we got something back from HTML conversion, it
+            // might still include raw markdown markers (ChatGPT sometimes
+            // outputs a mixture of HTML and markdown). Run the markdown
+            // converter on the result so we don't ship `**bold**` verbatim.
+            if (hasFormatting && convertedText && /\*\*[^\*]+\*\*|__[^_]+__|`[^`]+`/.test(convertedText)) {
+                const maybe = convertMarkdownToUnicode(convertedText);
+                if (maybe !== convertedText) {
+                    convertedText = maybe;
+                }
             }
         }
 
