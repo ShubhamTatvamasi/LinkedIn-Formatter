@@ -30,7 +30,7 @@ A simple, powerful tool to format LinkedIn posts with bold, italic, emojis, list
 
 ```bash
 # Clone the repo
-git clone https://github.com/yourusername/LinkedIn-Formatter.git
+git clone https://github.com/ShubhamTatvamasi/LinkedIn-Formatter.git
 
 # Open in browser
 cd LinkedIn-Formatter
