@@ -1,0 +1,26 @@
+---
+import Icon from './Icon.astro';
+import { EMOJI_GROUPS } from '../lib/emoji.ts';
+---
+
+<dialog id="emojiDialog" class="dialog" aria-labelledby="emoji-title">
+  <div class="dialog-head">
+    <h2 id="emoji-title">Emoji & symbols</h2>
+    <button type="button" class="icon-btn" data-close aria-label="Close"><Icon name="x" /></button>
+  </div>
+  <div class="emoji-tabs" role="tablist">
+    {EMOJI_GROUPS.map((g, i) => (
+      <button type="button" role="tab" aria-selected={i === 0 ? 'true' : 'false'} aria-controls={`eg-${g.id}`} data-tab={g.id}>
+        {g.label}
+      </button>
+    ))}
+  </div>
+  {EMOJI_GROUPS.map((g, i) => (
+    <div class="emoji-grid" role="tabpanel" id={`eg-${g.id}`} hidden={i !== 0}>
+      {[...new Set(g.items)].map((e) => (
+        <button type="button" class="emoji" data-emoji={e} aria-label={e}>{e}</button>
+      ))}
+    </div>
+  ))}
+  <p class="dialog-hint">Click to insert at the cursor. Hold Shift to insert several.</p>
+</dialog>

@@ -1,0 +1,64 @@
+---
+import Icon from './Icon.astro';
+
+const isMac = false; // labels are corrected client-side
+const mod = isMac ? '⌘' : 'Ctrl';
+---
+
+<div class="toolbar" role="toolbar" aria-label="Formatting" aria-controls="editor">
+  <div class="tb-group">
+    <button type="button" class="tb-btn" data-action="undo" data-tip={`Undo · ${mod}+Z`} aria-label="Undo"><Icon name="undo-2" /></button>
+    <button type="button" class="tb-btn" data-action="redo" data-tip={`Redo · ${mod}+Shift+Z`} aria-label="Redo"><Icon name="redo-2" /></button>
+  </div>
+
+  <div class="tb-group">
+    <button type="button" class="tb-btn" data-style="bold" data-tip={`Bold · ${mod}+B`} aria-label="Bold"><Icon name="bold" /></button>
+    <button type="button" class="tb-btn" data-style="italic" data-tip={`Italic · ${mod}+I`} aria-label="Italic"><Icon name="italic" /></button>
+    <button type="button" class="tb-btn tb-glyph" data-style="boldItalic" data-tip="Bold italic" aria-label="Bold italic">𝘽</button>
+    <button type="button" class="tb-btn" data-style="underline" data-tip={`Underline · ${mod}+U`} aria-label="Underline"><Icon name="underline" /></button>
+    <button type="button" class="tb-btn" data-style="strikethrough" data-tip={`Strikethrough · ${mod}+Shift+X`} aria-label="Strikethrough"><Icon name="strikethrough" /></button>
+    <button type="button" class="tb-btn" data-style="monospace" data-tip={`Monospace · ${mod}+E`} aria-label="Monospace"><Icon name="code" /></button>
+  </div>
+
+  <div class="tb-group">
+    <details class="tb-menu">
+      <summary class="tb-btn tb-wide" data-tip="Fancy fonts" aria-label="Fancy fonts"><Icon name="sparkles" /><span class="tb-caret">▾</span></summary>
+      <div class="menu" role="menu">
+        <button type="button" role="menuitem" data-style="script"><span class="menu-glyph">𝓢𝓬𝓻𝓲𝓹𝓽</span></button>
+        <button type="button" role="menuitem" data-style="fraktur"><span class="menu-glyph">𝔉𝔯𝔞𝔨𝔱𝔲𝔯</span></button>
+        <button type="button" role="menuitem" data-style="doubleStruck"><span class="menu-glyph">𝔻𝕠𝕦𝕓𝕝𝕖</span></button>
+      </div>
+    </details>
+    <details class="tb-menu">
+      <summary class="tb-btn tb-wide" data-tip="Change case" aria-label="Change case"><Icon name="case-sensitive" /><span class="tb-caret">▾</span></summary>
+      <div class="menu" role="menu">
+        <button type="button" role="menuitem" data-case="upper">UPPERCASE</button>
+        <button type="button" role="menuitem" data-case="lower">lowercase</button>
+        <button type="button" role="menuitem" data-case="title">Title Case</button>
+        <button type="button" role="menuitem" data-case="sentence">Sentence case</button>
+      </div>
+    </details>
+    <button type="button" class="tb-btn" data-action="clear-format" data-tip="Remove formatting" aria-label="Remove formatting"><Icon name="eraser" /></button>
+  </div>
+
+  <div class="tb-group">
+    <button type="button" class="tb-btn" data-list="bullet" data-tip="Bullet list" aria-label="Bullet list"><Icon name="list" /></button>
+    <button type="button" class="tb-btn" data-list="number" data-tip="Numbered list" aria-label="Numbered list"><Icon name="list-ordered" /></button>
+    <button type="button" class="tb-btn" data-list="check" data-tip="Checklist" aria-label="Checklist"><Icon name="list-checks" /></button>
+    <button type="button" class="tb-btn" data-list="arrow" data-tip="Arrow list" aria-label="Arrow list"><Icon name="arrow-right" /></button>
+  </div>
+
+  <div class="tb-group">
+    <details class="tb-menu">
+      <summary class="tb-btn tb-wide" data-tip="Divider" aria-label="Insert divider"><Icon name="separator-horizontal" /><span class="tb-caret">▾</span></summary>
+      <div class="menu" role="menu">
+        <button type="button" role="menuitem" data-insert="divider-heavy">━━━━━━━━━━</button>
+        <button type="button" role="menuitem" data-insert="divider-light">──────────</button>
+        <button type="button" role="menuitem" data-insert="divider-dots">• • • • • •</button>
+        <button type="button" role="menuitem" data-insert="divider-stars">✦ ✦ ✦</button>
+      </div>
+    </details>
+    <button type="button" class="tb-btn" data-action="quote" data-tip="Quote" aria-label="Quote"><Icon name="quote" /></button>
+    <button type="button" class="tb-btn" data-action="emoji" data-tip="Emoji & symbols" aria-label="Emoji and symbols"><Icon name="smile" /></button>
+  </div>
+</div>

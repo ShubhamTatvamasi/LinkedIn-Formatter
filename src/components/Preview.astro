@@ -1,0 +1,53 @@
+---
+import Icon from './Icon.astro';
+---
+
+<section class="preview-col" aria-labelledby="preview-title">
+  <div class="preview-head">
+    <h2 id="preview-title" class="panel-title"><Icon name="eye" size={16} /> Feed preview</h2>
+    <div class="segmented" role="radiogroup" aria-label="Preview device">
+      <button type="button" role="radio" aria-checked="true" data-device="desktop"><Icon name="monitor" size={15} /> Desktop</button>
+      <button type="button" role="radio" aria-checked="false" data-device="mobile"><Icon name="smartphone" size={15} /> Mobile</button>
+    </div>
+  </div>
+
+  <div class="device" data-device="desktop" id="device">
+    <article class="post" aria-label="LinkedIn post preview">
+      <header class="post-head">
+        <div class="avatar" aria-hidden="true">Y</div>
+        <div class="post-meta">
+          <strong>Your Name</strong>
+          <span>Your headline goes here</span>
+          <span class="post-time">1h · <Icon name="globe" size={12} /></span>
+        </div>
+        <Icon name="ellipsis" class="post-more-icon" />
+      </header>
+
+      <div class="post-body">
+        <div id="preview" class="post-text is-clamped" aria-live="polite"></div>
+        <button type="button" id="seeMore" class="see-more" hidden>…more</button>
+        <p id="previewEmpty" class="post-empty">Start typing and your post shows up here, exactly as it'll look in the feed.</p>
+      </div>
+
+      <div class="post-reactions" aria-hidden="true">
+        <span class="reaction-dots"><i></i><i></i><i></i></span>
+        <span>128</span>
+        <span class="spacer"></span>
+        <span>24 comments · 9 reposts</span>
+      </div>
+      <footer class="post-actions" aria-hidden="true">
+        <span><Icon name="thumbs-up" size={18} /> Like</span>
+        <span><Icon name="message-circle" size={18} /> Comment</span>
+        <span><Icon name="repeat-2" size={18} /> Repost</span>
+        <span><Icon name="send" size={18} /> Send</span>
+      </footer>
+    </article>
+  </div>
+
+  <p class="fold-note" id="foldNote"><Icon name="info" size={14} /> <span>Everything above “…more” is your hook. Make it count.</span></p>
+
+  <button type="button" class="btn btn-primary btn-block" id="copyBtn">
+    <span class="copy-idle"><Icon name="copy" /> Copy post</span>
+    <span class="copy-done"><Icon name="check" /> Copied. Paste it into LinkedIn</span>
+  </button>
+</section>

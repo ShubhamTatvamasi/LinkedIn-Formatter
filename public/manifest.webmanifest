@@ -1,0 +1,13 @@
+{
+  "name": "LinkedIn Formatter",
+  "short_name": "LI Formatter",
+  "description": "Format LinkedIn posts with Unicode bold, italic, lists and emojis, with a live feed preview.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f2ee",
+  "theme_color": "#0a66c2",
+  "lang": "en",
+  "categories": ["productivity", "utilities"],
+  "icons": [{ "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

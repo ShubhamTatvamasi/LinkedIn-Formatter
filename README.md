@@ -1,77 +1,61 @@
-# LinkedIn Formatter 🚀
+# LinkedIn Formatter
 
-A simple, powerful tool to format LinkedIn posts with bold, italic, emojis, lists, and more. Features smart paste from ChatGPT, Word, Google Docs, real-time preview, and keyboard shortcuts.
+Format LinkedIn posts with Unicode bold, italic and other styles, lists and emojis, then check a live feed preview that shows where LinkedIn's "…more" cut lands.
 
-**[Try it now →](https://shubhamtatvamasi.com/LinkedIn-Formatter/)**
+**[Open the formatter →](https://shubhamtatvamasi.com/LinkedIn-Formatter/)**
 
-## ✨ Features
+## Features
 
-- **Text Formatting** - Bold, italic, monospace, underline, strikethrough
-- **Lists** - Bullets, numbers, checklists, arrows
-- **Visual Elements** - Headers, dividers, quotes, line spacing
-- **1000+ Emojis** - 11 categories with easy picker
-- **Smart Paste** - Auto-converts ChatGPT, Word, Google Docs formatting
-- **Undo/Redo** - Full history with keyboard shortcuts
-- **Real-time Preview** - See results instantly
-- **Quick Templates** - 6 templates for common post types
-- **Responsive** - Works on desktop, tablet, mobile
+- **Text styles that toggle**: bold, italic, bold italic, underline, strikethrough, monospace, plus script, fraktur and double-struck. Apply a style a second time to remove it. With no selection, the style applies to the word under the cursor.
+- **Smart paste**: rich text from ChatGPT, Google Docs, Word and web pages, as well as Markdown (`**bold**`, `# heading`, `- list`, `` `code` ``, links), converts to LinkedIn-ready text.
+- **Feed preview**: desktop and mobile cards clamp at three lines like the LinkedIn feed, so you can see what readers get before they click "…more".
+- **Lists**: bullets, numbers, checks and arrows. Clicking the same list type again removes it.
+- **Case tools**, dividers, quotes, and an emoji and symbol picker.
+- **Templates**: eight post structures (listicle, story, launch, hiring and more).
+- **Undo/redo**, autosaved draft (stored only in your browser), dark mode, and an accessibility hint when too much text is styled.
 
-## ⌨️ Shortcuts
+## Shortcuts
 
 | Action | Windows/Linux | Mac |
-|--------|---------------|-----|
-| Undo | Ctrl+Z | Cmd+Z |
-| Redo | Ctrl+Shift+Z | Cmd+Shift+Z |
-| Bold | Ctrl+B | Cmd+B |
-| Italic | Ctrl+I | Cmd+I |
-| Underline | Ctrl+U | Cmd+U |
+| --- | --- | --- |
+| Bold | Ctrl+B | ⌘B |
+| Italic | Ctrl+I | ⌘I |
+| Underline | Ctrl+U | ⌘U |
+| Strikethrough | Ctrl+Shift+X | ⌘⇧X |
+| Monospace | Ctrl+E | ⌘E |
+| Undo / Redo | Ctrl+Z / Ctrl+Shift+Z | ⌘Z / ⌘⇧Z |
 
-## 🚀 Quick Start
+## Development
+
+Requires Node 22.12 or newer.
 
 ```bash
-# Clone the repo
-git clone https://github.com/ShubhamTatvamasi/LinkedIn-Formatter.git
-
-# Open in browser
-cd LinkedIn-Formatter
-python -m http.server 8000
-# Visit http://localhost:8000
+npm install
+npm run dev      # http://localhost:4321/LinkedIn-Formatter/
+npm test         # unit tests for the formatting and paste logic
+npm run build    # type-check and build to dist/
 ```
 
-## 📝 How to Use
+### Project layout
 
-1. Type or paste content in the editor
-2. Select text and click formatting buttons or use shortcuts
-3. Use templates to get started quickly
-4. Preview your post on the right side
-5. Copy and paste into LinkedIn
+```
+src/
+  lib/          unicode.ts (style maps), paste.ts (smart paste), history.ts, templates, emoji, FAQ
+  scripts/      app.ts, the client-side editor logic
+  components/   Toolbar, Preview, EmojiDialog, Icon (Lucide icons inlined at build time)
+  layouts/      Base.astro (SEO meta, JSON-LD, theme bootstrap)
+  pages/        index.astro, 404.astro
+tests/          node:test unit tests
+```
 
-## 🛠 Tech Stack
+## Deployment
 
-- **Pure JavaScript** - No dependencies
-- **HTML5/CSS3** - Responsive design
-- **Unicode Characters** - For LinkedIn-compatible formatting
-- **CDN Resources** - Font Awesome, Emojibase
+On every push to `main`, [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) runs the unit tests, builds the site with `withastro/action` and publishes it to GitHub Pages. The repository's Pages source must be set to **GitHub Actions**. `astro.config.mjs` sets `base: '/LinkedIn-Formatter'` because the site is served as a project page under the custom domain.
 
-## 📄 License
+## Tech
 
-MIT License - See LICENSE file
-## 📜 License
-
-This project is open source and available under the [MIT License](LICENSE).
-
-## 🌟 Acknowledgments
-
-- LinkedIn for inspiring the design
-- Font Awesome for the beautiful icons
-- The open-source community
-
-## 📧 Contact
-
-Have questions or suggestions? Feel free to reach out!
+[Astro](https://astro.build) static output, plain TypeScript, no UI framework and no runtime CDN dependencies.
 
 ---
 
-**Made with ❤️ for LinkedIn creators**
-
-⭐ Star this repo if you find it helpful!
+Not affiliated with or endorsed by LinkedIn Corporation.
